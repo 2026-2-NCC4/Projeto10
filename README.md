@@ -27,7 +27,7 @@
 |       Disciplina       |                                            Entrega 1                                             | Entrega 2 |
 | :--------------------: | :----------------------------------------------------------------------------------------------: | :-------: |
 | Engenharia de Software | [entrega-1/engenharia-de-software/](https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software) |     -     |
-|           -            |                                                -                                                 |     -     |
+| Projeto Interdisciplinar | [entrega-1/projeto-interdisciplinar/](https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar) |     -     |
 |           -            |                                                -                                                 |     -     |
 |           -            |                                                -                                                 |     -     |
 |           -            |                                                -                                                 |     -     |
