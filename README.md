@@ -12,7 +12,7 @@
 [Analice Coimbra Carneiro](https://github.com/AnaliceCoimbra)  
 [Mariah Alice Pimentel Lôbo Pereira](https://github.com/alicelobwp)  
 [Sofia Botechia Hernandes](https://github.com/sofiahernandes)  
-[Victória Duarte Vieira Azevedo](https://github.com/viick04)
+[Victória Duarte Vieira Azevedo](https://github.com/victoria-azevedo)
 
 ## Professores Orientadores
 
@@ -24,13 +24,14 @@
 
 ## Entregas das Disciplinas
 
-|        Disciplina        |                                                                  Entrega 1                                                                  | Entrega 2 |
-| :----------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------: | :-------: |
-|      Contabilidade       |            [entrega-1/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/contabilidade>)            |     -     |
-|  Engenharia de Software  |   [entrega-1/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software>)   |     -     |
-| Projeto Interdisciplinar | [entrega-1/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar>) |     -     |
-|            -             |                                                                      -                                                                      |     -     |
-|            -             |                                                                      -                                                                      |     -     |
+|          Disciplina          |                                                                   Entrega 1                                                                   | Entrega 2 |
+| :--------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------: | :-------: |
+| Análise Inferencial de Dados | [entrega-1/analise-inferencial-dados/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/analise-inferencial-dados>) |     -     |
+|        Contabilidade         |             [entrega-1/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/contabilidade>)             |     -     |
+|    Engenharia de Software    |    [entrega-1/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software>)    |     -     |
+|   Projeto Interdisciplinar   |  [entrega-1/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar>)  |     -     |
+|              -               |                                                                       -                                                                       |     -     |
+|              -               |                                                                       -                                                                       |     -     |
 
 <br/>
 
