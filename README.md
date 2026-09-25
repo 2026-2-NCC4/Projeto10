@@ -39,17 +39,15 @@
 
 ## Proposta Principal
 
-O projeto Nour tem como objetivo desenvolver um pipeline de Ciência de Dados para transformar dados brutos em informações úteis para análise e tomada de decisão. A solução contempla as etapas de coleta e ingestão dos dados, preparação e integração, análise estatística descritiva, análise inferencial e regressão, cálculo de indicadores financeiros, geração de relatórios e disponibilização dos resultados por meio de um dashboard interativo publicado na nuvem.
+O projeto Nour tem como objetivo desenvolver, em parceria com a empresa [CTI Global](https://ctiglobal.com/), um pipeline de Ciência de Dados para transformar dados brutos em informações úteis para análise e tomada de decisão. A solução contempla as etapas de coleta e ingestão dos dados, preparação e integração, análise estatística descritiva, análise inferencial e regressão, cálculo de indicadores financeiros, geração de relatórios e disponibilização dos resultados por meio de um dashboard interativo publicado na nuvem.
 
-O projeto integra as contribuições das Unidades Curriculares de Análise Inferencial de Dados, Contabilidade e Finanças, Engenharia de Software e Arquitetura de Sistemas e Projeto Interdisciplinar: Ciência de Dados.
+Sendo que o projeto integra entregas relacionadas às unidades curriculares de Análise Inferencial de Dados, Contabilidade e Finanças, Engenharia de Software e Arquitetura de Sistemas.
 
-O dashboard deverá apresentar, no mínimo, cinco indicadores, permitindo filtros e comparações temporais ou segmentadas. Entre os indicadores previstos estão receita, custos variáveis, margem, ticket médio e CAC/LTV simulados. Cada indicador deverá possuir sua fórmula, unidade, periodicidade e fonte documentadas.
+O dashboard apresenta, no mínimo, cinco indicadores, permitindo filtros e comparações temporais e segmentadas. Entre os indicadores estão receita, custos variáveis, margem, ticket médio e CAC/LTV simulados. Cada indicador possui sua fórmula, unidade, periodicidade e fonte documentadas.
 
-A solução será desenvolvida de forma reprodutível e rastreável, utilizando scripts e notebooks versionados no GitHub. Os dados originais deverão ser preservados na camada `data/raw/`, enquanto os dados preparados e processados serão organizados nas camadas `staging/` e `processed/`.
+A solução foi desenvolvida de forma reprodutível e rastreável, utilizando scripts e notebooks versionados no GitHub. Os dados originais estão preservados na camada `data/raw/`, enquanto os dados preparados e processados estão organizados nas camadas `data/staging/` e `data/processed/`.
 
 O projeto também contempla recursos de análise de cenários e sensibilidade, permitindo simular impactos de alterações como descontos, cupons, custos e volume sobre a margem e outros indicadores financeiros.
-
-A solução deverá respeitar princípios de qualidade, rastreabilidade e ética no tratamento dos dados, incluindo cuidados relacionados à LGPD e à correta interpretação dos resultados estatísticos, evitando interpretar correlação como causalidade.
 
 <br/>
 
@@ -74,7 +72,7 @@ Projeto10/
 
 ## 🛠 Instalação
 
-O projeto utiliza Python 3.x como linguagem principal e ferramentas de análise e visualização de dados. Para executar o projeto localmente, recomenda-se utilizar um ambiente virtual Python.
+O projeto utiliza Python 3 como linguagem principal e ferramentas de análise e visualização de dados. Para executar o projeto localmente, recomenda-se utilizar um ambiente virtual Python.
 
 ```bash
 # Clone o repositório
