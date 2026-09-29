@@ -1,7 +1,7 @@
 """Dashboard financeiro inicial do projeto NOUR / CTI Global.
 
 Executar a partir da raiz do repositório:
-    streamlit run dashboard/app.py
+    python -m streamlit run dashboard/app.py
 """
 
 from pathlib import Path
