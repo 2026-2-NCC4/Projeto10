@@ -113,20 +113,37 @@ st.caption(
     "Simulação CTI Global · 1.200 cenários financeiros para os anos de 2027 a 2038"
 )
 
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+        background-color: rgba(250, 250, 250, 0.4);
+    }
+    [data-testid="stSidebar"] [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+        background-color: rgba(250, 250, 250, 0.4) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 with st.sidebar:
     st.header("Recorte da análise")
     anos = sorted(data["ano_num"].unique())
-    anos_selecionados = st.multiselect("Ano da concessão", anos, default=anos)
-    cenarios = sorted(data["Cenário"].unique())
+    ano_options = ["Todos", *anos]
+    anos_selecionados = st.multiselect(
+        "Ano da concessão", ano_options, default=["Todos"], select_all=False
+    )
+    cenario_options = ["Todos", *sorted(data["Cenário"].unique())]
     cenarios_selecionados = st.multiselect(
-        "Cenários", cenarios, default=cenarios, help="Deixe todos selecionados para visualizar a distribuição simulada."
+        "Cenários", cenario_options, default=["Todos"], select_all=False
     )
     st.divider()
     st.caption(f"Fonte: `{DATA_PATH.relative_to(ROOT)}`")
     st.caption("Atualização: leitura direta da base bruta.")
 
 filtered = data[
-    data["ano_num"].isin(anos_selecionados) & data["Cenário"].isin(cenarios_selecionados)
+    (data["ano_num"].isin(anos) if "Todos" in anos_selecionados else data["ano_num"].isin(anos_selecionados))
+    & (data["Cenário"].isin(cenario_options[1:]) if "Todos" in cenarios_selecionados else data["Cenário"].isin(cenarios_selecionados))
 ].copy()
 
 if filtered.empty:
