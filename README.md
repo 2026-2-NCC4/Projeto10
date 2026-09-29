@@ -90,6 +90,9 @@ source .venv/bin/activate
 
 # Instale as dependências do projeto
 pip install -r requirements.txt
+
+# Rode o dashboard localmente
+python -m streamlit run dashboard/app.py
 ```
 
 <br/>
@@ -168,16 +171,10 @@ notebooks/
 ...
 ```
 
-7. Para executar o dashboard, acesse a pasta correspondente:
+7. Para executar o dashboard, execute utilizando Streamlit:
 
 ```bash
-cd dashboard
-```
-
-8. Execute o aplicativo utilizando Streamlit:
-
-```bash
-streamlit run <arquivo_principal>.py
+python -m streamlit run dashboard/app.py
 ```
 
 9. Acesse o endereço informado pelo Streamlit no navegador, normalmente:
