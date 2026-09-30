@@ -5,7 +5,6 @@ Executar a partir da raiz do repositório:
 """
 
 from pathlib import Path
-import re
 import unicodedata
 
 import pandas as pd
@@ -13,15 +12,22 @@ import plotly.express as px
 import streamlit as st
 
 
+# Caminho raiz do repositório, calculado com base na localização deste arquivo.
+# Se a estrutura de pastas mudar, ajuste parents[1] (dashboard/app.py -> raiz).
 ROOT = Path(__file__).resolve().parents[1]
+# Arquivo de entrada: troque esta linha para apontar o dashboard a outra base.
 DATA_PATH = ROOT / "data" / "raw" / "Dados_Originais_CTI.csv"
 
+# Configuração global do Streamlit. page_title aparece na aba do navegador,
+# page_icon controla o ícone e layout="wide" usa toda a largura disponível.
 st.set_page_config(page_title="NOUR | Painel financeiro", page_icon="◒", layout="wide")
 
 
 @st.cache_data(show_spinner="Preparando a base analítica...")
 def load_data(path: str) -> pd.DataFrame:
     """Lê a base longa, padroniza contas e calcula os índices validados."""
+    # O CSV vem separado por ponto e vírgula, sem cabeçalho, com números no
+    # padrão brasileiro. Altere sep/encoding/decimal/thousands se a origem mudar.
     raw = pd.read_csv(
         path,
         sep=";",
@@ -31,17 +37,26 @@ def load_data(path: str) -> pd.DataFrame:
         decimal=",",
         thousands=".",
     )
+    # Uniformiza espaços em nomes de contas; isso evita colunas duplicadas por
+    # diferenças de formatação invisíveis na planilha original.
     raw["Conta"] = raw["Conta"].str.replace(r"\s+", " ", regex=True).str.strip()
     contas = raw.dropna(subset=["Conta"])
+    # Converte o formato longo (uma conta por linha) para uma linha por ano e
+    # cenário, com cada conta em sua própria coluna. aggfunc="first" é usado
+    # quando a origem contém mais de uma linha para a mesma combinação.
     wide = contas.pivot_table(
         index=["Ano", "Cenário"], columns="Conta", values="Valor", aggfunc="first"
     ).reset_index()
+    # Extrai o número do período (por exemplo, "Ano 1" -> 1). O deslocamento
+    # 2026 converte o período em ano calendário para os gráficos e rótulos.
     wide["ano_num"] = wide["Ano"].str.extract(r"(\d+)").astype(int)
     wide["ano_calendario"] = wide["ano_num"] + 2026
     wide["encerramento"] = wide["ano_num"].eq(12)
 
     def col(name: str) -> pd.Series:
         # A planilha e o CSV divergem pontualmente no hífen e nos acentos.
+        # A normalização abaixo faz a busca tolerante a acentos e a " - ";
+        # a coluna retornada continua sendo a original, com os valores intactos.
         def normalize(label: object) -> str:
             label = str(label).replace(" - ", " ")
             return "".join(
@@ -54,6 +69,8 @@ def load_data(path: str) -> pd.DataFrame:
             raise KeyError(f"Conta não encontrada: {name}")
         return wide[exact[0]]
 
+    # Atalhos para as colunas da demonstração de resultados e do balanço.
+    # Se os nomes na origem mudarem, ajuste os textos enviados a col().
     receita = col("DRE Receita")
     ativo_circulante = col("BAL Ativo Circulante")
     passivo_circulante = col("BAL Passivo Circulante")
@@ -66,7 +83,11 @@ def load_data(path: str) -> pd.DataFrame:
     permanente = col("BAL Permanente")
 
     # Fórmulas reproduzem a aba "Índices" da Planilha de Validação KPIs.
+    # Cada linha abaixo cria uma nova coluna derivada que pode ser usada nas
+    # métricas, gráficos, filtros ou no CSV baixado.
     wide["receita"] = receita
+    # Custos são multiplicados por -1 via abs() para exibir despesas negativas
+    # como valores positivos no resumo, preservando a convenção apresentada.
     wide["custos_variaveis"] = col("DRE Custos").abs()
     wide["ebitda"] = col("DRE EBITDA")
     wide["resultado_liquido"] = col("DRE Resultado Líquido")
@@ -92,6 +113,8 @@ def load_data(path: str) -> pd.DataFrame:
 
 
 def brl(value: float) -> str:
+    # Converte números para texto em reais e abrevia em milhões ou bilhões.
+    # Os limites e casas decimais podem ser alterados aqui para mudar os cartões.
     if pd.isna(value):
         return "—"
     scale, suffix = (1e9, " bi") if abs(value) >= 1e9 else (1e6, " mi")
@@ -99,20 +122,26 @@ def brl(value: float) -> str:
 
 
 def pct(value: float) -> str:
+    # Formato percentual com vírgula decimal, adequado à apresentação brasileira.
     return "—" if pd.isna(value) else f"{value:.1%}".replace(".", ",")
 
 
 try:
+    # Streamlit guarda o resultado em cache para evitar reler e recalcular a
+    # base em cada interação. O decorador usa o caminho como chave do cache.
     data = load_data(str(DATA_PATH))
 except (FileNotFoundError, KeyError, pd.errors.ParserError) as error:
     st.error(f"Não foi possível preparar a base de dados: {error}")
     st.stop()
 
+# Cabeçalho principal: textos e descrição podem ser editados diretamente aqui.
 st.title("NOUR · painel financeiro")
 st.caption(
     "Simulação CTI Global · 1.200 cenários financeiros para os anos de 2027 a 2038"
 )
 
+# CSS local para os seletores múltiplos na barra lateral. Ajuste cores/opacidade
+# nestas declarações; os seletores data-testid dependem da estrutura do Streamlit.
 st.markdown(
     """
     <style>
@@ -127,6 +156,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 with st.sidebar:
+    # Opções de filtro. "Todos" é uma opção especial interpretada abaixo e não
+    # corresponde a um valor literal da coluna de dados.
     st.header("Recorte da análise")
     anos = sorted(data["ano_num"].unique())
     ano_options = ["Todos", *anos]
@@ -141,6 +172,8 @@ with st.sidebar:
     st.caption(f"Fonte: `{DATA_PATH.relative_to(ROOT)}`")
     st.caption("Atualização: leitura direta da base bruta.")
 
+# Aplica os filtros: escolher "Todos" mantém todos os valores daquela dimensão.
+# .copy() cria um recorte independente para agregações e exportação posteriores.
 filtered = data[
     (data["ano_num"].isin(anos) if "Todos" in anos_selecionados else data["ano_num"].isin(anos_selecionados))
     & (data["Cenário"].isin(cenario_options[1:]) if "Todos" in cenarios_selecionados else data["Cenário"].isin(cenarios_selecionados))
@@ -151,10 +184,13 @@ if filtered.empty:
     st.stop()
 
 latest_year = filtered["ano_num"].max()
+# Compara o período mais recente selecionado com o período imediatamente anterior.
 latest = filtered[filtered["ano_num"].eq(latest_year)]
 previous = filtered[filtered["ano_num"].eq(latest_year - 1)]
 
 def variation(metric: str, percentage: bool = False) -> str | None:
+    # A variação é diferença entre medianas dos grupos, não taxa de crescimento
+    # relativa. percentage controla apenas a formatação do valor resultante.
     if previous.empty:
         return None
     current = latest[metric].median()
@@ -163,6 +199,8 @@ def variation(metric: str, percentage: bool = False) -> str | None:
         return f"{(current - before):+.1%}".replace(".", ",")
     return f"{(current - before):+.2f}".replace(".", ",")
 
+# Cinco cartões em colunas iguais; troque st.columns(5) e os índices para mudar
+# quantidade ou ordem dos indicadores exibidos.
 st.subheader(f"Resumo — Ano {latest_year} ({2026 + latest_year})")
 st.caption("Cartões mostram a mediana dos cenários filtrados; a variação é versus o ano anterior.")
 cards = st.columns(5)
@@ -172,6 +210,8 @@ cards[2].metric("Margem EBITDA", pct(latest["margem_ebitda"].median()), variatio
 cards[3].metric("ROE", pct(latest["roe"].median()), variation("roe", True))
 cards[4].metric("Liquidez corrente", f"{latest['liquidez_corrente'].median():.2f}", variation("liquidez_corrente"))
 
+# Para as linhas de tendência, reduz cada ano a uma mediana entre os cenários
+# atualmente filtrados. Inclua novas agregações aqui para plotá-las em seguida.
 by_year = (
     filtered.groupby(["ano_num", "ano_calendario"], as_index=False)
     .agg(
@@ -183,6 +223,8 @@ by_year = (
     )
 )
 
+# Dois gráficos lado a lado. Os códigos hexadecimais no mapa definem as cores
+# das séries; markers=True desenha pontos em cada ano.
 left, right = st.columns(2)
 with left:
     fig = px.line(
@@ -191,6 +233,7 @@ with left:
         title="Receita e EBITDA — mediana dos cenários",
         color_discrete_map={"receita": "#1f7a72", "ebitda": "#e9a23b"},
     )
+    # Formatação do eixo vertical: prefixo em reais e abreviação de escala.
     fig.update_layout(legend_title_text="", yaxis_tickprefix="R$ ", yaxis_tickformat="~s")
     st.plotly_chart(fig, use_container_width=True)
 with right:
@@ -206,6 +249,8 @@ with right:
     fig.update_layout(yaxis2=dict(overlaying="y", side="right", title="Liquidez corrente", tickformat=".2f"))
     st.plotly_chart(fig, use_container_width=True)
 
+# Boxplot permite comparar a dispersão entre os cenários por ano. A lista define
+# quais indicadores o seletor oferece e os textos amigáveis que aparecem na UI.
 st.subheader("Distribuição entre cenários")
 metric_labels = {
     "margem_ebitda": "Margem EBITDA",
@@ -223,6 +268,8 @@ if selected_metric in {"margem_ebitda", "roe"}:
     distribution.update_yaxes(tickformat=".0%")
 st.plotly_chart(distribution, use_container_width=True)
 
+# Conteúdo recolhível para deixar a tela principal mais enxuta sem ocultar
+# definições metodológicas e avisos sobre a interpretação dos indicadores.
 with st.expander("Metodologia, fórmulas e limitações"):
     st.markdown(
         """
@@ -240,8 +287,11 @@ with st.expander("Metodologia, fórmulas e limitações"):
         """
     )
 
+# Colunas e ordem do arquivo exportado. Adicione/remova nomes aqui para mudar
+# exatamente o conteúdo disponibilizado no botão de download.
 export_columns = ["Cenário", "Ano", "ano_calendario", "receita", "custos_variaveis", "ebitda", "margem_ebitda", "roe", "liquidez_corrente"]
 st.download_button(
+    # O BOM (utf-8-sig) melhora a abertura do CSV com acentos no Excel.
     "Baixar recorte em CSV",
     filtered[export_columns].to_csv(index=False).encode("utf-8-sig"),
     file_name="nour_recorte_kpis.csv",
