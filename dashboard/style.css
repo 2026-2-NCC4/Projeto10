@@ -1,0 +1,26 @@
+/* Espaçamento interno da área principal do dashboard. */
+.st-emotion-cache-zy6yx3 {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+}
+
+/* Fundo dos campos e das tags selecionadas nos multiselects da barra lateral. */
+[data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+    background-color: rgba(250, 250, 250, 0.4);
+}
+
+[data-testid="stSidebar"] [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+    background-color: rgba(250, 250, 250, 0.4) !important;
+}
+
+/* Fundo dos elementos apontados pelo seletor gerado pelo Streamlit. */
+.st-emotion-cache-197vr8o {
+    background-color: rgba(250, 250, 250, 0.1) !important;
+}
+
+/* Cor da borda quando um campo está em foco. */
+.st-emotion-cache-1u0ihn6[data-focus-within] {
+    border-color: rgb(14, 17, 23) !important;
+}

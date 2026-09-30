@@ -17,6 +17,8 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 # Arquivo de entrada: troque esta linha para apontar o dashboard a outra base.
 DATA_PATH = ROOT / "data" / "raw" / "Dados_Originais_CTI.csv"
+# Folha de estilos ao lado deste script, para separar apresentação da lógica.
+STYLE_PATH = Path(__file__).with_name("style.css")
 
 # Configuração global do Streamlit. page_title aparece na aba do navegador,
 # page_icon controla o ícone e layout="wide" usa toda a largura disponível.
@@ -140,35 +142,10 @@ st.caption(
     "Simulação CTI Global · 1.200 cenários financeiros para os anos de 2027 a 2038"
 )
 
-# CSS local para os seletores múltiplos na barra lateral. Ajuste cores/opacidade
-# nestas declarações; os seletores data-testid dependem da estrutura do Streamlit.
-st.markdown(
-    """
-    <style>
-    .st-emotion-cache-zy6yx3 {
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-        background-color: rgba(250, 250, 250, 0.4);
-    }
-    [data-testid="stSidebar"] [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-        background-color: rgba(250, 250, 250, 0.4) !important;
-    }
-    .st-emotion-cache-197vr8o {
-        background-color: rgba(250, 250, 250, 0.1) !important;
-    }
-    .st-emotion-cache-1u0ihn6[data-focus-within] {
-        border-color: rgb(14, 17, 23) !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# O Streamlit não carrega CSS externo automaticamente. Lemos o arquivo da pasta
+# do app e o injetamos no documento; assim as regras ficam editáveis em style.css.
+custom_css = STYLE_PATH.read_text(encoding="utf-8")
+st.markdown(f"<style>\n{custom_css}\n</style>", unsafe_allow_html=True)
 with st.sidebar:
     # Opções de filtro. "Todos" é uma opção especial interpretada abaixo e não
     # corresponde a um valor literal da coluna de dados.
