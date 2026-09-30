@@ -135,7 +135,7 @@ except (FileNotFoundError, KeyError, pd.errors.ParserError) as error:
     st.stop()
 
 # Cabeçalho principal: textos e descrição podem ser editados diretamente aqui.
-st.title("NOUR · painel financeiro")
+st.title("NOUR")
 st.caption(
     "Simulação CTI Global · 1.200 cenários financeiros para os anos de 2027 a 2038"
 )
@@ -145,11 +145,25 @@ st.caption(
 st.markdown(
     """
     <style>
+    .st-emotion-cache-zy6yx3 {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    /* Sidebar */
     [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
         background-color: rgba(250, 250, 250, 0.4);
     }
     [data-testid="stSidebar"] [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
         background-color: rgba(250, 250, 250, 0.4) !important;
+    }
+    .st-emotion-cache-197vr8o {
+        background-color: rgba(250, 250, 250, 0.1) !important;
+    }
+    .st-emotion-cache-1u0ihn6[data-focus-within] {
+        border-color: rgb(14, 17, 23) !important;
     }
     </style>
     """,
