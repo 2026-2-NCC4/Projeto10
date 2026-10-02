@@ -72,28 +72,7 @@ Projeto10/
 
 ## 🛠 Instalação
 
-O projeto utiliza Python 3 como linguagem principal e ferramentas de análise e visualização de dados. Para executar o projeto localmente, recomenda-se utilizar um ambiente virtual Python.
-
-```bash
-# Clone o repositório
-git clone https://github.com/2026-2-NCC4/Projeto10.git
-cd Projeto10
-
-# Crie e ative um ambiente virtual
-python -m venv .venv
-
-# No Windows
-.venv\Scripts\activate
-
-# No Linux/macOS
-source .venv/bin/activate
-
-# Instale as dependências do projeto
-pip install -r requirements.txt
-
-# Rode o dashboard localmente
-python -m streamlit run dashboard/app.py
-```
+O projeto está hospedado em [https://nour-dashboard.streamlit.app](https://nour-dashboard.streamlit.app/), portanto não há necessidade de instalação. Apenas acesse o link para visualizar a aplicação.
 
 <br/>
 
@@ -128,47 +107,35 @@ As principais tecnologias previstas para o projeto incluem:
 
 ### Passo-a-passo de execução local
 
-1. Clone o repositório:
-
 ```bash
+# Clone o repositório
 git clone https://github.com/2026-2-NCC4/Projeto10.git
-```
-
-2. Acesse a pasta do projeto:
-
-```bash
 cd Projeto10
-```
 
-3. Crie e ative o ambiente virtual:
+# Crie e ative um ambiente virtual
+python3 -m venv .venv
 
-```bash
-python -m venv .venv
+.venv\Scripts\activate # No Windows
+source .venv/bin/activate # No Linux/macOS
 
-# No Windows
-.venv\Scripts\activate
-
-# No Linux/macOS
-source .venv/bin/activate
-```
-
-4. Instale as dependências:
-
-```bash
+# Instale as dependências do projeto
 pip install -r requirements.txt
+
+# Rode o dashboard localmente
+python -m streamlit run dashboard/app.py
 ```
 
 5. Configure as variáveis de ambiente, caso sejam necessárias para fontes externas de dados. Utilize o arquivo `.env.example` como referência e mantenha informações sensíveis fora do repositório.
 
 ```bash
-...
+[...]
 ```
 
 6. Execute os notebooks de análise conforme a sequência do projeto:
 
 ```text
 notebooks/
-...
+[...]
 ```
 
 7. Para executar o dashboard, execute utilizando Streamlit:
