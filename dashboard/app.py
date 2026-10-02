@@ -15,8 +15,8 @@ import streamlit as st
 # Caminho raiz do repositório, calculado com base na localização deste arquivo.
 # Se a estrutura de pastas mudar, ajuste parents[1] (dashboard/app.py -> raiz).
 ROOT = Path(__file__).resolve().parents[1]
-# Arquivo de entrada: troque esta linha para apontar o dashboard a outra base.
-DATA_PATH = ROOT / "data" / "raw" / "Dados_Originais_CTI.csv"
+# Arquivo já padronizado para consumo pelo dashboard.
+DATA_PATH = ROOT / "data" / "processed" / "Dados_Formatados_CTI.csv"
 # Folha de estilos ao lado deste script, para separar apresentação da lógica.
 STYLE_PATH = Path(__file__).with_name("style.css")
 
@@ -27,18 +27,15 @@ st.set_page_config(page_title="NOUR | Painel financeiro", page_icon="◒", layou
 
 @st.cache_data(show_spinner="Preparando a base analítica...")
 def load_data(path: str) -> pd.DataFrame:
-    """Lê a base longa, padroniza contas e calcula os índices validados."""
-    # O CSV vem separado por ponto e vírgula, sem cabeçalho, com números no
-    # padrão brasileiro. Altere sep/encoding/decimal/thousands se a origem mudar.
+    """Lê a base formatada, padroniza contas e calcula índices validados."""
+    # CSV formatado usa cabeçalho e números no padrão brasileiro.
     raw = pd.read_csv(
         path,
         sep=";",
-        header=None,
-        names=["Ano", "Cenário", "Conta", "Valor"],
         encoding="latin-1",
         decimal=",",
         thousands=".",
-    )
+    ).rename(columns={"Cenario": "Cenário"})
     # Uniformiza espaços em nomes de contas; isso evita colunas duplicadas por
     # diferenças de formatação invisíveis na planilha original.
     raw["Conta"] = raw["Conta"].str.replace(r"\s+", " ", regex=True).str.strip()
@@ -76,13 +73,20 @@ def load_data(path: str) -> pd.DataFrame:
     receita = col("DRE Receita")
     ativo_circulante = col("BAL Ativo Circulante")
     passivo_circulante = col("BAL Passivo Circulante")
-    passivo_lp = col("BAL Exigível a Longo Prazo")
     patrimonio = col("BAL Patrimônio Líquido")
     ativo_total = col("BAL Total do Ativo")
     caixa = col("BAL Disponível")
     estoque = col("BAL Estoques Diversos")
     realizavel_lp = col("BAL Realizável a Longo Prazo")
     permanente = col("BAL Permanente")
+    outros_debitos = col("BAL Outros deb")
+    emprestimos = col("BAL Emprést")
+    contingencias = col("BAL Prov para Contingências")
+    # SUMIFS da planilha trata conta ausente como zero; sum reproduz esse caso
+    # no encerramento, quando nem todos os componentes de dívida existem.
+    divida_total = pd.concat(
+        [passivo_circulante, outros_debitos, emprestimos, contingencias], axis=1
+    ).sum(axis=1)
 
     # Fórmulas reproduzem a aba "Índices" da Planilha de Validação KPIs.
     # Cada linha abaixo cria uma nova coluna derivada que pode ser usada nas
@@ -92,6 +96,7 @@ def load_data(path: str) -> pd.DataFrame:
     # como valores positivos no resumo, preservando a convenção apresentada.
     wide["custos_variaveis"] = col("DRE Custos").abs()
     wide["ebitda"] = col("DRE EBITDA")
+    wide["resultado_operacional"] = col("DRE Resultado Operacional")
     wide["resultado_liquido"] = col("DRE Resultado Líquido")
     wide["margem_ebitda"] = wide["ebitda"].div(receita)
     wide["margem_liquida"] = wide["resultado_liquido"].div(receita)
@@ -100,17 +105,18 @@ def load_data(path: str) -> pd.DataFrame:
     wide["liquidez_corrente"] = ativo_circulante.div(passivo_circulante).abs()
     wide["liquidez_seca"] = (ativo_circulante - estoque).div(passivo_circulante).abs()
     wide["liquidez_imediata"] = caixa.div(passivo_circulante).abs()
-    wide["liquidez_geral"] = (ativo_circulante + realizavel_lp).div(
-        passivo_circulante + passivo_lp
-    ).abs()
-    wide["participacao_capital_terceiros"] = (passivo_circulante + passivo_lp).div(
-        patrimonio
-    ).abs()
-    wide["composicao_endividamento"] = passivo_circulante.div(
-        passivo_circulante + passivo_lp
-    ).abs()
+    wide["liquidez_geral"] = (ativo_circulante + realizavel_lp).div(divida_total).abs()
+    wide["participacao_capital_terceiros"] = divida_total.div(patrimonio).abs()
+    wide["composicao_endividamento"] = passivo_circulante.div(divida_total).abs()
     wide["imobilizacao_pl"] = (realizavel_lp + permanente).div(patrimonio).abs()
+    wide["divida_total"] = divida_total
     wide["caixa"] = caixa
+    wide["geracao_caixa"] = col("FLU Geração de Caixa")
+    wide["investimentos"] = col("FLU Investimentos")
+    wide["saldo_final_caixa"] = col("FLU Saldo Final")
+    wide["eva"] = (wide["resultado_operacional"] * (1 - 0.34)) - (
+        (ativo_total - passivo_circulante) * 0.10
+    )
     return wide
 
 
@@ -161,7 +167,7 @@ with st.sidebar:
     )
     st.divider()
     st.caption(f"Fonte: `{DATA_PATH.relative_to(ROOT)}`")
-    st.caption("Atualização: leitura direta da base bruta.")
+    st.caption("Atualização: leitura direta da base formatada.")
 
 # Aplica os filtros: escolher "Todos" mantém todos os valores daquela dimensão.
 # .copy() cria um recorte independente para agregações e exportação posteriores.
@@ -190,16 +196,23 @@ def variation(metric: str, percentage: bool = False) -> str | None:
         return f"{(current - before):+.1%}".replace(".", ",")
     return f"{(current - before):+.2f}".replace(".", ",")
 
-# Cinco cartões em colunas iguais; troque st.columns(5) e os índices para mudar
-# quantidade ou ordem dos indicadores exibidos.
-st.subheader(f"Resumo — Ano {latest_year} ({2026 + latest_year})")
+# Valores da DRE, DFC e balanço, agregados pela mediana dos cenários filtrados.
+st.subheader(f"Resumo do ano {latest_year} ({2026 + latest_year})")
 st.caption("Cartões mostram a mediana dos cenários filtrados; a variação é versus o ano anterior.")
 cards = st.columns(5)
 cards[0].metric("Receita", brl(latest["receita"].median()), variation("receita"))
-cards[1].metric("Custos variáveis", brl(latest["custos_variaveis"].median()), variation("custos_variaveis"))
-cards[2].metric("Margem EBITDA", pct(latest["margem_ebitda"].median()), variation("margem_ebitda", True))
-cards[3].metric("ROE", pct(latest["roe"].median()), variation("roe", True))
-cards[4].metric("Liquidez corrente", f"{latest['liquidez_corrente'].median():.2f}", variation("liquidez_corrente"))
+cards[1].metric("EBITDA", brl(latest["ebitda"].median()), variation("ebitda"))
+cards[2].metric("Resultado líquido", brl(latest["resultado_liquido"].median()), variation("resultado_liquido"))
+cards[3].metric("Geração de caixa", brl(latest["geracao_caixa"].median()), variation("geracao_caixa"))
+cards[4].metric("Dívida total", brl(latest["divida_total"].median()), variation("divida_total"))
+
+st.subheader("Índices financeiros")
+indices = st.columns(5)
+indices[0].metric("Margem EBITDA", pct(latest["margem_ebitda"].median()), variation("margem_ebitda", True))
+indices[1].metric("ROA", pct(latest["roa"].median()), variation("roa", True))
+indices[2].metric("ROE", pct(latest["roe"].median()), variation("roe", True))
+indices[3].metric("Liquidez corrente", f"{latest['liquidez_corrente'].median():.2f}", variation("liquidez_corrente"))
+indices[4].metric("Liquidez geral", f"{latest['liquidez_geral'].median():.2f}", variation("liquidez_geral"))
 
 # Para as linhas de tendência, reduz cada ano a uma mediana entre os cenários
 # atualmente filtrados. Inclua novas agregações aqui para plotá-las em seguida.
@@ -209,6 +222,7 @@ by_year = (
         receita=("receita", "median"),
         ebitda=("ebitda", "median"),
         margem_ebitda=("margem_ebitda", "median"),
+        roe=("roe", "median"),
         liquidez_corrente=("liquidez_corrente", "median"),
         capital_terceiros=("participacao_capital_terceiros", "median"),
     )
@@ -245,32 +259,44 @@ with right:
 st.subheader("Distribuição entre cenários")
 metric_labels = {
     "margem_ebitda": "Margem EBITDA",
+    "roa": "ROA",
     "roe": "ROE",
     "liquidez_corrente": "Liquidez corrente",
+    "liquidez_seca": "Liquidez seca",
+    "liquidez_imediata": "Liquidez imediata",
+    "liquidez_geral": "Liquidez geral",
     "participacao_capital_terceiros": "Participação de capital de terceiros",
+    "composicao_endividamento": "Composição do endividamento",
+    "imobilizacao_pl": "Imobilização do PL",
+    "eva": "EVA",
 }
-selected_metric = st.selectbox("Indicador", list(metric_labels), format_func=metric_labels.get)
-distribution = px.box(
-    filtered, x="ano_calendario", y=selected_metric, points=False,
-    labels={"ano_calendario": "Ano calendário", selected_metric: metric_labels[selected_metric]},
-    color_discrete_sequence=["#1f7a72"],
-)
-if selected_metric in {"margem_ebitda", "roe"}:
-    distribution.update_yaxes(tickformat=".0%")
-st.plotly_chart(distribution, use_container_width=True)
+if filtered["Cenário"].nunique() < 2:
+    st.info("Escolha mais de um cenário para observar a distribuição.")
+else:
+    selected_metric = st.selectbox("Indicador", list(metric_labels), format_func=metric_labels.get)
+    distribution = px.box(
+        filtered, x="ano_calendario", y=selected_metric, points=False,
+        labels={"ano_calendario": "Ano calendário", selected_metric: metric_labels[selected_metric]},
+        color_discrete_sequence=["#1f7a72"],
+    )
+    if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
+        distribution.update_yaxes(tickformat=".0%")
+    st.plotly_chart(distribution, use_container_width=True)
 
 # Conteúdo recolhível para deixar a tela principal mais enxuta sem ocultar
 # definições metodológicas e avisos sobre a interpretação dos indicadores.
 with st.expander("Metodologia, fórmulas e limitações"):
     st.markdown(
         """
-        Os valores são projeções simuladas, não histórico realizado. A fonte é a base bruta da CTI,
+        Os valores são projeções simuladas, não histórico realizado. A fonte é a base formatada da CTI,
         transformada para uma linha por combinação de ano e cenário. As fórmulas foram conferidas
         contra a aba **Índices** da Planilha de Validação KPIs.
 
-        - Margem EBITDA = EBITDA / Receita; ROE = Resultado Líquido / |Patrimônio Líquido|.
-        - Liquidez corrente = |Ativo Circulante / Passivo Circulante|; liquidez seca exclui estoques.
-        - Participação de capital de terceiros = |(Passivo Circulante + Exigível a Longo Prazo) / PL|.
+        - Margem EBITDA = EBITDA / Receita; ROA = Resultado Líquido / Ativo Total; ROE = Resultado Líquido / |Patrimônio Líquido|.
+        - Liquidez corrente = |Ativo Circulante / Passivo Circulante|; liquidez seca exclui estoques; imediata usa disponível.
+        - Dívida total = Passivo Circulante + Outros Débitos + Empréstimos + Provisões para Contingências.
+        - Liquidez geral, participação de capital de terceiros, composição do endividamento e imobilização do PL usam esta dívida total.
+        - EVA = Resultado Operacional após 34% de imposto − 10% do capital empregado, conforme planilha.
         - Custos são apresentados em módulo positivo, pois a base registra despesas com sinal negativo.
 
         No Ano 12 ocorre o encerramento da concessão. Índices que dividem pelo passivo circulante
@@ -280,7 +306,13 @@ with st.expander("Metodologia, fórmulas e limitações"):
 
 # Colunas e ordem do arquivo exportado. Adicione/remova nomes aqui para mudar
 # exatamente o conteúdo disponibilizado no botão de download.
-export_columns = ["Cenário", "Ano", "ano_calendario", "receita", "custos_variaveis", "ebitda", "margem_ebitda", "roe", "liquidez_corrente"]
+export_columns = [
+    "Cenário", "Ano", "ano_calendario", "receita", "custos_variaveis", "ebitda",
+    "resultado_operacional", "resultado_liquido", "geracao_caixa", "investimentos",
+    "saldo_final_caixa", "divida_total", "margem_ebitda", "roa", "roe",
+    "liquidez_corrente", "liquidez_seca", "liquidez_imediata", "liquidez_geral",
+    "participacao_capital_terceiros", "composicao_endividamento", "imobilizacao_pl", "eva",
+]
 st.download_button(
     # O BOM (utf-8-sig) melhora a abertura do CSV com acentos no Excel.
     "Baixar recorte em CSV",
