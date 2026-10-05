@@ -99,13 +99,10 @@
 }
 button {
   color: var(--nour-ink) !important;
-
 }
 button:hover,
 [data-testid="stDownloadButton"] button:hover {
-  background: var(--nour-blue) !important;
   border-color: var(--nour-blue) !important;
-  color: #fff !important;
 }
 button:focus-visible,
 [data-baseweb="select"] input:focus-visible,
@@ -262,8 +259,19 @@ h3 {
   color: var(--nour-ink) !important;
   border-color: var(--nour-border) !important;
 }
-.st-emotion-cache-4bm6i2 {
-  background-color: rgba(255, 255, 255, 0.6) !important;
+.st-emotion-cache-scp8yw {
+  visibility: hidden !important;
+  display: none !important;
+}
+.st-emotion-cache-4bm6i2,
+.st-emotion-cache-1u0ihn6 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  color:rgb(14, 17, 23) !important;
+}
+.st-emotion-cache-5oiw43,
+.st-emotion-cache-1goh6io,
+.st-emotion-cache-mvfai7::placeholder {
+  color:rgb(14, 17, 23) !important;
 }
 .svg-container {
     border-radius: 0.5rem;
