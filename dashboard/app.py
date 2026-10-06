@@ -121,8 +121,7 @@ def chart(figure, class_name="chart-card"):
     return html.Div(dcc.Graph(figure=figure, config={"displayModeBar": False}, responsive=True), className=class_name)
 
 
-@app.callback(Output("dashboard-content", "children"), Input("years", "value"), Input("scenarios", "value"), Input("distribution-metric", "value"))
-def render(years, scenarios, selected_metric="margem_ebitda"):
+def render_content(years, scenarios, selected_metric="margem_ebitda"):
     years, scenarios = years or [], scenarios or []
     chosen_years = YEARS if "all" in years or not years else years
     chosen_scenarios = SCENARIOS if "all" in scenarios or not scenarios else scenarios
@@ -176,5 +175,23 @@ def render(years, scenarios, selected_metric="margem_ebitda"):
         section("Risco e criação de valor", "Tendências operacionais e probabilidades empíricas no conjunto selecionado.", [html.Div([chart(trend), chart(index_fig), chart(risk_fig), chart(scatter), chart(value_fig), chart(balance_fig)], className="chart-grid")]),
         section("Distribuição de cenários", "Dispersão dos indicadores operacionais por ano.", [chart(distribution)]),
     ]
+@app.callback(Output("dashboard-content", "children"), Input("years", "value"), Input("scenarios", "value"), Input("distribution-metric", "value"))
+def render(years, scenarios, selected_metric):
+    try:
+        return render_content(years, scenarios, selected_metric)
+    except Exception as error:
+        app.logger.exception("Dashboard render failed")
+        return [html.Div(f"Could not render charts: {type(error).__name__}: {error}", className="empty-state")]
+
+
+# Serve the first dashboard view in the initial HTML response. The callback
+# replaces it whenever the user changes a filter.
+try:
+    app.layout.children[0].children[1].children = render_content(YEARS, SCENARIOS, "margem_ebitda")
+except Exception as error:
+    app.logger.exception("Initial dashboard render failed")
+    app.layout.children[0].children[1].children = [html.Div(f"Could not render charts: {type(error).__name__}: {error}", className="empty-state")]
+
+
 if __name__ == "__main__":
     app.run(debug=False)
