@@ -1,6 +1,6 @@
 """NOUR financial dashboard, implemented with Python and Dash.
 
-Run from the repository root with ``python dashboard/app.py``.
+Run from the repository root with ``python src/dashboard/app.py``.
 """
 
 from pathlib import Path
@@ -12,7 +12,17 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "data" / "processed" / "Dados_Formatados_CTI.csv"
+DATA_PATH = next(
+    (
+        path
+        for path in (
+            ROOT / "data" / "processed" / "Dados_Formatados_CTI.csv",
+            ROOT / "src" / "data" / "processed" / "Dados_Formatados_CTI.csv",
+        )
+        if path.exists()
+    ),
+    ROOT / "src" / "data" / "processed" / "Dados_Formatados_CTI.csv",
+)
 COLORS = {
     "ink": "#171717",
     "teal": "#55a9e8",
@@ -132,6 +142,24 @@ METRIC_LABELS = {
     "imobilizacao_pl": "Imobilização do PL",
     "eva": "EVA",
 }
+PERSPECTIVES = {
+    "tecnica": "Técnica",
+    "gestao": "Gestão",
+    "investidores": "Investidores",
+}
+PERSPECTIVE_METRICS = {
+    "tecnica": [
+        "liquidez_corrente",
+        "liquidez_seca",
+        "liquidez_imediata",
+        "liquidez_geral",
+        "participacao_capital_terceiros",
+        "composicao_endividamento",
+        "imobilizacao_pl",
+    ],
+    "gestao": ["margem_ebitda", "liquidez_corrente", "roa", "eva"],
+    "investidores": ["margem_ebitda", "roa", "roe", "eva"],
+}
 app = Dash(
     __name__,
     title="NOUR | Painel financeiro",
@@ -149,7 +177,6 @@ app.layout = html.Div(
                 html.Header(
                     className="page-header",
                     children=[
-                        html.Div("NOUR  /  CTI GLOBAL", className="eyebrow"),
                         html.H1("Painel financeiro"),
                         html.P("Simulação financeira · 1.200 cenários · 2027–2038"),
                     ],
@@ -173,7 +200,17 @@ app.layout = html.Div(
                     className="brand-lockup",
                 ),
                 html.H2("Sua análise", className="sidebar-title"),
-                html.Label("Anos da concessão"),
+                html.Label("Perspectiva"),
+                dcc.Dropdown(
+                    id="perspective",
+                    options=[
+                        {"label": label, "value": key}
+                        for key, label in PERSPECTIVES.items()
+                    ],
+                    value="gestao",
+                    clearable=False,
+                ),
+                html.Label("Anos da concessão", className="filter-label"),
                 dcc.Dropdown(
                     id="years",
                     options=[{"label": "Todos", "value": "all"}]
@@ -197,6 +234,7 @@ app.layout = html.Div(
                     options=[
                         {"label": label, "value": key}
                         for key, label in METRIC_LABELS.items()
+                        if key in PERSPECTIVE_METRICS["gestao"]
                     ],
                     value="margem_ebitda",
                     clearable=False,
@@ -250,6 +288,12 @@ def card(label, value, delta=None):
     return html.Div(children, className="metric-card")
 
 
+def insight(title, text, tone="neutral"):
+    return html.Div(
+        [html.H3(title), html.P(text)], className=f"insight-card insight-{tone}"
+    )
+
+
 def section(title, subtitle, children):
     return html.Section(
         [
@@ -277,8 +321,15 @@ def chart(figure, class_name="chart-card"):
     )
 
 
-def render_content(years, scenarios, selected_metric="margem_ebitda"):
+def render_content(
+    years, scenarios, selected_metric="margem_ebitda", perspective="gestao"
+):
     years, scenarios = years or [], scenarios or []
+    perspective = perspective if perspective in PERSPECTIVES else "gestao"
+    allowed_metrics = PERSPECTIVE_METRICS[perspective]
+    selected_metric = (
+        selected_metric if selected_metric in allowed_metrics else allowed_metrics[0]
+    )
     chosen_years = YEARS if "all" in years or not years else years
     chosen_scenarios = SCENARIOS if "all" in scenarios or not scenarios else scenarios
     filtered = DATA[
@@ -452,6 +503,78 @@ def render_content(years, scenarios, selected_metric="margem_ebitda"):
         },
     )
     risk_fig.update_yaxes(tickformat=".0%")
+    latest_risk = risk.loc[risk["ano_calendario"].eq(2026 + latest_year)].iloc[0]
+    revenue_change = delta("receita")
+    margin_change = delta("margem_ebitda")
+    cash_risk = latest_risk["caixa_negativo"]
+    liquidity_risk = latest_risk["liquidez_critica"]
+    eva_risk = latest_risk["eva_negativo"]
+    selected_values = latest[selected_metric].dropna()
+    p10, p90 = selected_values.quantile([0.10, 0.90])
+
+    management_insights = [
+        insight(
+            "Tração de receita",
+            (
+                f"A mediana da receita variou {revenue_change:+.1%} frente ao ano anterior."
+                if revenue_change is not None
+                else "Não há ano anterior no recorte para comparar a receita."
+            ),
+        ),
+        insight(
+            "Eficiência operacional",
+            (
+                f"A margem EBITDA mudou {margin_change:+.1%} no período, "
+                f"chegando a {percent(latest.margem_ebitda.median())}."
+                if margin_change is not None
+                else f"A margem EBITDA mediana é de {percent(latest.margem_ebitda.median())}."
+            ),
+        ),
+        insight(
+            "Prioridade de caixa",
+            f"{cash_risk:.0%} dos cenários encerram o ano com caixa negativo; "
+            "esse é o principal sinal para acompanhar no plano de ação.",
+            "alert" if cash_risk >= 0.10 else "positive",
+        ),
+    ]
+    technical_insights = [
+        insight(
+            "Cobertura de curto prazo",
+            f"A liquidez corrente mediana é {latest.liquidez_corrente.median():.2f}x; "
+            f"{liquidity_risk:.0%} dos cenários ficam abaixo de 1,0x.",
+            "alert" if liquidity_risk >= 0.10 else "positive",
+        ),
+        insight(
+            "Dependência de terceiros",
+            f"O capital de terceiros representa, na mediana, "
+            f"{percent(latest.participacao_capital_terceiros.median())} do patrimônio líquido.",
+        ),
+        insight(
+            "Faixa de incerteza",
+            f"No ano mais recente, os 80% centrais de {METRIC_LABELS[selected_metric].lower()} "
+            f"vão de {percent(p10) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else f'{p10:.2f}x'} "
+            f"a {percent(p90) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else f'{p90:.2f}x'}.",
+        ),
+    ]
+    investor_insights = [
+        insight(
+            "Criação de valor",
+            f"O EVA mediano é {money(latest.eva.median())}; "
+            f"{eva_risk:.0%} dos cenários apresentam EVA negativo no ano.",
+            "alert" if eva_risk >= 0.10 else "positive",
+        ),
+        insight(
+            "Retorno sobre o capital",
+            f"O ROE mediano é {percent(latest.roe.median())}. "
+            "Leia este indicador junto à estrutura de capital e à dispersão entre cenários.",
+        ),
+        insight(
+            "Assimetria de cenários",
+            f"Para {METRIC_LABELS[selected_metric].lower()}, os percentis 10 e 90 no ano são "
+            f"{percent(p10) if selected_metric in {'margem_ebitda', 'roa', 'roe'} else money(p10)} e "
+            f"{percent(p90) if selected_metric in {'margem_ebitda', 'roa', 'roe'} else money(p90)}.",
+        ),
+    ]
     scatter = px.scatter(
         latest,
         x="margem_ebitda",
@@ -524,9 +647,6 @@ def render_content(years, scenarios, selected_metric="margem_ebitda"):
                 ],
             )
         ]
-    selected_metric = (
-        selected_metric if selected_metric in METRIC_LABELS else "margem_ebitda"
-    )
     distribution = px.box(
         operating,
         x="ano_calendario",
@@ -541,6 +661,75 @@ def render_content(years, scenarios, selected_metric="margem_ebitda"):
     )
     if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
         distribution.update_yaxes(tickformat=".0%")
+    if perspective == "tecnica":
+        return [
+            section(
+                "Saúde financeira e controles",
+                f"Ano {latest_year} ({2026+latest_year}) · mediana do recorte selecionado",
+                [html.Div(tiles2, className="metrics-grid")],
+            ),
+            section(
+                "Leituras para controle",
+                "Interpretações calculadas a partir da mediana e da distribuição dos cenários selecionados.",
+                [html.Div(technical_insights, className="insights-grid")],
+            ),
+            section(
+                "Risco financeiro",
+                "Probabilidade empírica de eventos de liquidez, resultado e criação de valor.",
+                [chart(risk_fig)],
+            ),
+            section(
+                "Distribuição de cenários",
+                "Dispersão do indicador financeiro selecionado por ano.",
+                [chart(distribution)],
+            ),
+        ]
+
+    if perspective == "investidores":
+        investor_tiles = [
+            card("EBITDA", money(latest.ebitda.median()), delta("ebitda")),
+            card(
+                "Resultado líquido",
+                money(latest.resultado_liquido.median()),
+                delta("resultado_liquido"),
+            ),
+            card(
+                "Geração de caixa",
+                money(latest.geracao_caixa.median()),
+                delta("geracao_caixa"),
+            ),
+            card("ROE", percent(latest.roe.median()), delta("roe")),
+            card("EVA", money(latest.eva.median()), delta("eva")),
+        ]
+        return [
+            section(
+                "Retorno ao investidor",
+                f"Ano {latest_year} ({2026+latest_year}) · mediana do recorte selecionado",
+                [html.Div(investor_tiles, className="metrics-grid")],
+            ),
+            section(
+                "Leituras para decisão de investimento",
+                "O retorno é apresentado com sua incerteza; os textos acompanham o recorte de anos e cenários aplicado.",
+                [html.Div(investor_insights, className="insights-grid")],
+            ),
+            section(
+                "Valor e potencial de retorno",
+                "Relação entre rentabilidade, criação de valor, caixa e estrutura de capital.",
+                [
+                    html.Div(
+                        [chart(scatter), chart(value_fig), chart(balance_fig)],
+                        className="chart-grid",
+                    )
+                ],
+            ),
+            *terminal_children,
+            section(
+                "Distribuição de cenários",
+                "Amplitude dos retornos e indicadores observados nos cenários selecionados.",
+                [chart(distribution)],
+            ),
+        ]
+
     return [
         section(
             "Resumo operacional",
@@ -548,36 +737,41 @@ def render_content(years, scenarios, selected_metric="margem_ebitda"):
             [html.Div(tiles1, className="metrics-grid")],
         ),
         section(
-            "Índices financeiros",
-            "Indicadores calculados com as fórmulas validadas do projeto.",
-            [
-                html.Div(tiles2, className="metrics-grid"),
-                chart(index_fig, "chart-card radial-card"),
-            ],
+            "Leituras para gestão",
+            "Sinais que conectam desempenho, margem e risco de execução no recorte selecionado.",
+            [html.Div(management_insights, className="insights-grid")],
         ),
-        *terminal_children,
         section(
-            "Risco e criação de valor",
-            "Tendências operacionais e probabilidades empíricas no conjunto selecionado.",
+            "Acompanhamento da operação",
+            "Evolução de receita, EBITDA e riscos que exigem ação de gestão.",
             [
                 html.Div(
-                    [
-                        chart(trend),
-                        chart(risk_fig),
-                        chart(scatter),
-                        chart(value_fig),
-                        chart(balance_fig),
-                    ],
+                    [chart(trend), chart(value_fig), chart(risk_fig)],
                     className="chart-grid",
                 )
             ],
         ),
+        *terminal_children,
         section(
             "Distribuição de cenários",
-            "Dispersão dos indicadores operacionais por ano.",
+            "Dispersão do indicador operacional selecionado por ano.",
             [chart(distribution)],
         ),
     ]
+
+
+@app.callback(
+    Output("distribution-metric", "options"),
+    Output("distribution-metric", "value"),
+    Input("perspective", "value"),
+)
+def set_distribution_metrics(perspective):
+    perspective = perspective if perspective in PERSPECTIVE_METRICS else "gestao"
+    metrics = PERSPECTIVE_METRICS[perspective]
+    return (
+        [{"label": METRIC_LABELS[key], "value": key} for key in metrics],
+        metrics[0],
+    )
 
 
 @app.callback(
@@ -585,10 +779,11 @@ def render_content(years, scenarios, selected_metric="margem_ebitda"):
     Input("years", "value"),
     Input("scenarios", "value"),
     Input("distribution-metric", "value"),
+    Input("perspective", "value"),
 )
-def render(years, scenarios, selected_metric):
+def render(years, scenarios, selected_metric, perspective):
     try:
-        return render_content(years, scenarios, selected_metric)
+        return render_content(years, scenarios, selected_metric, perspective)
     except Exception as error:
         app.logger.exception("Dashboard render failed")
         return [
@@ -603,7 +798,7 @@ def render(years, scenarios, selected_metric):
 # replaces it whenever the user changes a filter.
 try:
     app.layout.children[0].children[1].children = render_content(
-        YEARS, SCENARIOS, "margem_ebitda"
+        YEARS, SCENARIOS, "margem_ebitda", "gestao"
     )
 except Exception as error:
     app.logger.exception("Initial dashboard render failed")

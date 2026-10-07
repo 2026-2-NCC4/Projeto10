@@ -56,15 +56,15 @@ O projeto também contempla recursos de análise de cenários e sensibilidade, p
 ```
 Projeto10/
 ├── (documentos)/
-├── dashboard/
-├── data/
-│   ├── raw/
-│   ├── staging/
-│   └── processed/
-├── docs/
-├── ES e ML/
-├── notebooks/
 ├── src/
+    ├── dashboard/
+    ├── data/
+    │   ├── raw/
+    │   ├── staging/
+    │   └── processed/
+    ├── docs/
+    ├── ES e ML/
+    ├── notebooks/
 └── README.md
 ```
 
@@ -122,7 +122,7 @@ source .venv/bin/activate # No Linux/macOS
 pip install -r requirements.txt
 
 # Rode o dashboard localmente
-python dashboard/app.py
+python src/dashboard/app.py
 ```
 
 5. Configure as variáveis de ambiente, caso sejam necessárias para fontes externas de dados. Utilize o arquivo `.env.example` como referência e mantenha informações sensíveis fora do repositório.
