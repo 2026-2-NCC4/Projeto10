@@ -131,19 +131,6 @@ python dashboard/app.py
 [...]
 ```
 
-6. Execute os notebooks de análise conforme a sequência do projeto:
-
-```text
-notebooks/
-[...]
-```
-
-7. Para executar o dashboard:
-
-```bash
-python dashboard/app.py
-```
-
 9. Acesse o endereço local no navegador:
 
 ```bash
