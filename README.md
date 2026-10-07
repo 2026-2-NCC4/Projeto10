@@ -30,8 +30,6 @@
 |        Contabilidade         |             [entrega-1/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/contabilidade>)             |     -     |
 |    Engenharia de Software    |    [entrega-1/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software>)    |     -     |
 |   Projeto Interdisciplinar   |  [entrega-1/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar>)  |     -     |
-|              -               |                                                                       -                                                                       |     -     |
-|              -               |                                                                       -                                                                       |     -     |
 
 <br/>
 
@@ -56,15 +54,15 @@ O projeto também contempla recursos de análise de cenários e sensibilidade, p
 ```
 Projeto10/
 ├── (documentos)/
-├── dashboard/
-├── data/
-│   ├── raw/
-│   ├── staging/
-│   └── processed/
-├── docs/
-├── ES e ML/
-├── notebooks/
 ├── src/
+    ├── dashboard/
+    ├── data/
+    │   ├── raw/
+    │   ├── staging/
+    │   └── processed/
+    ├── docs/
+    ├── ES e ML/
+    ├── notebooks/
 └── README.md
 ```
 
@@ -72,7 +70,7 @@ Projeto10/
 
 ## 🛠 Instalação
 
-O projeto está hospedado em [https://nour-dashboard.streamlit.app](https://nour-dashboard.streamlit.app/), portanto não há necessidade de instalação. Apenas acesse o link para visualizar a aplicação.
+O dashboard pode ser executado localmente com Python e Dash. A interface abre no navegador, com os gráficos à esquerda e filtros fixos à direita.
 
 <br/>
 
@@ -100,7 +98,7 @@ As principais tecnologias previstas para o projeto incluem:
 - Statsmodels
 - Matplotlib
 - Plotly
-- Streamlit
+- Dash
 - Jupyter Notebook
 
 <br/>
@@ -122,7 +120,7 @@ source .venv/bin/activate # No Linux/macOS
 pip install -r requirements.txt
 
 # Rode o dashboard localmente
-python -m streamlit run dashboard/app.py
+python src/dashboard/app.py
 ```
 
 5. Configure as variáveis de ambiente, caso sejam necessárias para fontes externas de dados. Utilize o arquivo `.env.example` como referência e mantenha informações sensíveis fora do repositório.
@@ -131,23 +129,10 @@ python -m streamlit run dashboard/app.py
 [...]
 ```
 
-6. Execute os notebooks de análise conforme a sequência do projeto:
-
-```text
-notebooks/
-[...]
-```
-
-7. Para executar o dashboard, execute utilizando Streamlit:
+9. Acesse o endereço local no navegador:
 
 ```bash
-python -m streamlit run dashboard/app.py
-```
-
-9. Acesse o endereço informado pelo Streamlit no navegador, normalmente:
-
-```bash
-http://localhost:8501
+http://127.0.0.1:8050
 ```
 
 <br/>
