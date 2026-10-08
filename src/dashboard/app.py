@@ -11,6 +11,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 
+from petals import petal
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = next(
     (
@@ -23,8 +25,9 @@ DATA_PATH = next(
     ),
     ROOT / "src" / "data" / "processed" / "Dados_Formatados_CTI.csv",
 )
+FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 COLORS = {
-    "ink": "#171717",
+    "ink": "#111111",
     "teal": "#55a9e8",
     "blue": "#55a9e8",
     "amber": "#501839",
@@ -147,6 +150,11 @@ PERSPECTIVES = {
     "gestao": "Gestão",
     "investidores": "Investidores",
 }
+PERSPECTIVE_SUMMARIES = {
+    "tecnica": "Liquidez, endividamento e os controles que sustentam a operação.",
+    "gestao": "Receita, margem e os riscos que exigem decisão no próximo ciclo.",
+    "investidores": "Retorno, criação de valor e a dispersão entre cenários.",
+}
 PERSPECTIVE_METRICS = {
     "tecnica": [
         "liquidez_corrente",
@@ -168,85 +176,150 @@ app = Dash(
 )
 server = app.server
 
+
+def row(label, control, readout=None):
+    """One control-panel line: name on the left, control (and value) on the right."""
+    right = [html.Div(control, className="row-control")]
+    if readout is not None:
+        right.append(readout)
+    return html.Div(
+        [
+            html.Span(label, className="row-label"),
+            html.Div(right, className="row-right"),
+        ],
+        className="row",
+    )
+
+
+def panel(title, children, open_by_default=True):
+    return html.Details(
+        [html.Summary(title), html.Div(children, className="panel-body")],
+        open=open_by_default,
+        className="panel",
+    )
+
+
 app.layout = html.Div(
     className="dashboard",
     children=[
         html.Main(
             className="main",
-            children=[
-                html.Header(
-                    className="page-header",
-                    children=[
-                        html.H1("Painel financeiro"),
-                        html.P("Simulação financeira · 1.200 cenários · 2027–2038"),
-                    ],
-                ),
-                html.Div(id="dashboard-content", className="content"),
-            ],
+            children=[html.Div(id="dashboard-content", className="content")],
         ),
         html.Aside(
             className="sidebar",
             children=[
                 html.Div(
                     [
-                        html.Div("N", className="brand-mark"),
+                        html.Div("NOUR", className="brand"),
                         html.Div(
-                            [
-                                html.Div("NOUR", className="brand"),
-                                html.Div("CTI GLOBAL", className="brand-caption"),
-                            ]
+                            "CTI Global | Concessão 2027–2038",
+                            className="brand-caption",
                         ),
                     ],
                     className="brand-lockup",
                 ),
-                html.H2("Sua análise", className="sidebar-title"),
-                html.Label("Perspectiva"),
-                dcc.Dropdown(
-                    id="perspective",
-                    options=[
-                        {"label": label, "value": key}
-                        for key, label in PERSPECTIVES.items()
+                panel(
+                    "Perspectiva",
+                    [
+                        dcc.Tabs(
+                            id="perspective",
+                            value="gestao",
+                            className="segmented",
+                            parent_className="segmented-parent",
+                            content_className="segmented-content",
+                            children=[
+                                dcc.Tab(
+                                    label=label,
+                                    value=key,
+                                    className="segment",
+                                    selected_className="segment--on",
+                                )
+                                for key, label in PERSPECTIVES.items()
+                            ],
+                        ),
+                        html.P(
+                            PERSPECTIVE_SUMMARIES["gestao"],
+                            id="perspective-summary",
+                            className="panel-note",
+                        ),
                     ],
-                    value="gestao",
-                    clearable=False,
                 ),
-                html.Label("Anos da concessão", className="filter-label"),
-                dcc.Dropdown(
-                    id="years",
-                    options=[{"label": "Todos", "value": "all"}]
-                    + [{"label": f"Ano {y} · {2026+y}", "value": y} for y in YEARS],
-                    value=["all"],
-                    multi=True,
-                    clearable=False,
-                ),
-                html.Label("Cenários", className="filter-label"),
-                dcc.Dropdown(
-                    id="scenarios",
-                    options=[{"label": "Todos", "value": "all"}]
-                    + [{"label": str(x), "value": x} for x in SCENARIOS],
-                    value=["all"],
-                    multi=True,
-                    clearable=False,
-                ),
-                html.Label("Indicador da distribuição", className="filter-label"),
-                dcc.Dropdown(
-                    id="distribution-metric",
-                    options=[
-                        {"label": label, "value": key}
-                        for key, label in METRIC_LABELS.items()
-                        if key in PERSPECTIVE_METRICS["gestao"]
+                panel(
+                    "Recorte",
+                    [
+                        row(
+                            "Anos da concessão",
+                            dcc.RangeSlider(
+                                id="years",
+                                min=min(YEARS),
+                                max=max(YEARS),
+                                step=1,
+                                value=[min(YEARS), max(YEARS)],
+                                marks=None,
+                                tooltip={"placement": "bottom"},
+                            ),
+                            html.Output(
+                                f"{min(YEARS)}–{max(YEARS)}",
+                                id="years-readout",
+                                className="readout",
+                            ),
+                        ),
+                        row(
+                            "Cenários simulados",
+                            dcc.RangeSlider(
+                                id="scenarios",
+                                min=1,
+                                max=len(SCENARIOS),
+                                step=1,
+                                value=[1, len(SCENARIOS)],
+                                marks=None,
+                                tooltip={"placement": "bottom"},
+                            ),
+                            html.Output(
+                                f"{len(SCENARIOS):,}".replace(",", "."),
+                                id="scenarios-readout",
+                                className="readout",
+                            ),
+                        ),
                     ],
-                    value="margem_ebitda",
-                    clearable=False,
                 ),
-                html.Div(
-                    className="sidebar-foot",
-                    children=[
-                        html.Span("FONTE"),
-                        html.P("Base formatada CTI"),
-                        html.Span("ATUALIZAÇÃO"),
-                        html.P("Leitura direta dos dados locais"),
+                panel(
+                    "Indicador",
+                    [
+                        row(
+                            "Distribuição",
+                            dcc.Dropdown(
+                                id="distribution-metric",
+                                options=[
+                                    {"label": label, "value": key}
+                                    for key, label in METRIC_LABELS.items()
+                                    if key in PERSPECTIVE_METRICS["gestao"]
+                                ],
+                                value="margem_ebitda",
+                                clearable=False,
+                            ),
+                        )
                     ],
+                ),
+                panel(
+                    "Fonte",
+                    [
+                        html.Dl(
+                            [
+                                html.Dt("Base"),
+                                html.Dd("Dados formatados CTI"),
+                                html.Dt("Atualização"),
+                                html.Dd("Leitura direta do arquivo local"),
+                                html.Dt("Cobertura"),
+                                html.Dd(
+                                    f"{len(SCENARIOS)} cenários · {len(YEARS)} anos"
+                                ),
+                            ],
+                            className="meta-list",
+                        )
+                    ],
+                    open_by_default=False,
                 ),
             ],
         ),
@@ -269,6 +342,11 @@ def percent(value):
     return "—" if pd.isna(value) else f"{value:.1%}".replace(".", ",")
 
 
+def ratio(value):
+    """A coverage multiple, e.g. 1,76x. pt-BR uses the comma as decimal mark."""
+    return "—" if pd.isna(value) else f"{value:.2f}x".replace(".", ",")
+
+
 def card(label, value, delta=None):
     children = [
         html.Div(label, className="metric-label"),
@@ -278,7 +356,9 @@ def card(label, value, delta=None):
         children.append(
             html.Div(
                 (
-                    f"Variação: {delta:+.1%}".replace(".", ",")
+                    # ponytail: ratios land under 1 and money never does, so the
+                    # magnitude picks the unit. Pass the unit in if that stops holding.
+                    f"Variação: {f'{delta * 100:+.1f}'.replace('.', ',')} p.p."
                     if abs(delta) < 1
                     else f"Variação: {money(delta)}"
                 ),
@@ -306,34 +386,139 @@ def section(title, subtitle, children):
 
 def chart(figure, class_name="chart-card"):
     figure.update_layout(
-        template="plotly",
+        template="plotly_white",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font={"family": "Arial, sans-serif", "color": COLORS["ink"]},
-        margin={"l": 45, "r": 25, "t": 55, "b": 45},
+        font={"family": FONT_STACK, "color": COLORS["ink"], "size": 12},
+        title_font={"size": 15, "color": COLORS["ink"]},
+        margin={"l": 48, "r": 20, "t": 56, "b": 44},
         legend_title_text="",
+        legend={"font": {"size": 12}},
+        hoverlabel={"font": {"family": FONT_STACK, "size": 12}},
     )
-    figure.update_xaxes(gridcolor="#e6e6e6", linecolor="#c9c9c9")
-    figure.update_yaxes(gridcolor="#e6e6e6", linecolor="#c9c9c9")
+    figure.update_xaxes(gridcolor="#eeeeee", linecolor="#cfcfcf", zeroline=False)
+    figure.update_yaxes(gridcolor="#eeeeee", linecolor="#cfcfcf", zeroline=False)
     return html.Div(
         dcc.Graph(figure=figure, config={"displayModeBar": False}, responsive=True),
         className=class_name,
     )
 
 
+HOLE = 0.34
+PETAL_GAP = 0.30  # share of each slice left empty, so petals read as separate shapes
+
+
+def radial_figure(scored_labels):
+    """Petal chart of relative indicator scores, one rounded petal per metric."""
+    figure = go.Figure()
+    slice_deg = 360 / len(scored_labels)
+    inner = 100 * HOLE / (1 - HOLE)
+    for index, (label, score) in enumerate(scored_labels):
+        theta, radius = petal(
+            center_deg=index * slice_deg,
+            width_deg=slice_deg * (1 - PETAL_GAP),
+            inner=inner,
+            outer=inner + score * (100 - inner) / 100,
+            corner=14,
+        )
+        figure.add_trace(
+            go.Scatterpolar(
+                theta=theta,
+                r=radius,
+                mode="lines",
+                fill="toself",
+                fillcolor=COLORS["plum"],
+                line={"width": 0},
+                hoveron="fills",
+                text=f"{label}<br>Índice relativo {score:.0f}/100",
+                hoverinfo="text",
+            )
+        )
+    figure.update_layout(
+        showlegend=False,
+        margin={"l": 80, "r": 80, "t": 56, "b": 56},
+        paper_bgcolor="rgba(0,0,0,0)",
+        font={"family": FONT_STACK},
+        hoverlabel={
+            "bgcolor": COLORS["plum"],
+            "bordercolor": COLORS["plum"],
+            "font": {"color": "#ffffff", "size": 13, "family": FONT_STACK},
+        },
+        polar={
+            "hole": HOLE,
+            "bgcolor": "rgba(0,0,0,0)",
+            "radialaxis": {
+                # Headroom past 100 so the labels clear the longest petal.
+                "range": [0, 118],
+                "showticklabels": False,
+                "showline": False,
+                "griddash": "dot",
+                "gridcolor": "rgba(80,24,57,.40)",
+                "gridwidth": 1,
+                "tickvals": [25, 50, 75, 100],
+            },
+            "angularaxis": {
+                "rotation": 90,
+                "direction": "clockwise",
+                "showline": False,
+                "griddash": "dot",
+                "gridcolor": "rgba(80,24,57,.40)",
+                "gridwidth": 1,
+                "linecolor": "rgba(80,24,57,.40)",
+                "tickmode": "array",
+                "tickvals": [i * slice_deg for i in range(len(scored_labels))],
+                "ticktext": [
+                    f"<span style='font-size:17px'>{score:.0f}</span><br>{label}"
+                    for label, score in scored_labels
+                ],
+                "tickfont": {"color": COLORS["plum"], "size": 12},
+            },
+        },
+    )
+    return figure
+
+
+def page(figure, subtitle, sections):
+    """Full-bleed radial hero, then the perspective's sections."""
+    return [
+        html.Section(
+            [
+                html.Div(
+                    [html.H1("Painel financeiro"), html.P(subtitle)],
+                    className="hero-copy",
+                ),
+                dcc.Graph(
+                    figure=figure,
+                    config={"displayModeBar": False},
+                    responsive=True,
+                    className="hero-chart",
+                    # Inline, not in the sheet: dcc.Graph sets its own inline
+                    # `height: 100%`, which no stylesheet rule can outrank. That
+                    # 100% resolves against an auto-height parent, so on every
+                    # callback remount Plotly measures 0 and falls back to 700x450.
+                    style={"height": "clamp(420px, 62vh, 680px)", "width": "100%"},
+                ),
+            ],
+            className="hero",
+        ),
+        html.Div(sections, className="stack"),
+    ]
+
+
 def render_content(
     years, scenarios, selected_metric="margem_ebitda", perspective="gestao"
 ):
-    years, scenarios = years or [], scenarios or []
+    year_from, year_to = years or [min(YEARS), max(YEARS)]
+    scenario_from, scenario_to = scenarios or [1, len(SCENARIOS)]
     perspective = perspective if perspective in PERSPECTIVES else "gestao"
     allowed_metrics = PERSPECTIVE_METRICS[perspective]
     selected_metric = (
         selected_metric if selected_metric in allowed_metrics else allowed_metrics[0]
     )
-    chosen_years = YEARS if "all" in years or not years else years
-    chosen_scenarios = SCENARIOS if "all" in scenarios or not scenarios else scenarios
+    chosen_scenarios = SCENARIOS[scenario_from - 1 : scenario_to]
     filtered = DATA[
-        DATA.ano_num.isin(chosen_years) & DATA["Cenário"].isin(chosen_scenarios)
+        DATA.ano_num.between(year_from, year_to)
+        & DATA["Cenário"].isin(chosen_scenarios)
     ].copy()
     if filtered.empty:
         return [
@@ -376,8 +561,8 @@ def render_content(
         ),
         card("ROA", percent(latest.roa.median()), delta("roa")),
         card("ROE", percent(latest.roe.median()), delta("roe")),
-        card("Liquidez corrente", f"{latest.liquidez_corrente.median():.2f}x"),
-        card("Liquidez geral", f"{latest.liquidez_geral.median():.2f}x"),
+        card("Liquidez corrente", ratio(latest.liquidez_corrente.median())),
+        card("Liquidez geral", ratio(latest.liquidez_geral.median())),
     ]
     by_year = operating.groupby(["ano_num", "ano_calendario"], as_index=False).agg(
         receita=("receita", "median"),
@@ -407,12 +592,14 @@ def render_content(
         )
     )
     trend.update_yaxes(tickprefix="R$ ", tickformat="~s")
+    # Short labels: these sit outside the ring and are clipped at phone widths
+    # if they run long. The sections below carry the full indicator names.
     radar_metrics = [
-        ("Margem EBITDA", "margem_ebitda"),
+        ("Margem", "margem_ebitda"),
         ("ROE", "roe"),
         ("Liquidez", "liquidez_corrente"),
         ("EVA", "eva"),
-        ("Geração de caixa", "geracao_caixa"),
+        ("Caixa", "geracao_caixa"),
         ("Receita", "receita"),
     ]
     radar_values = []
@@ -425,55 +612,7 @@ def render_content(
             else max(8, min(100, 12 + 88 * (med - lo) / (hi - lo)))
         )
         radar_values.append((label, score))
-    labels, scores = zip(*radar_values)
-    index_fig = go.Figure(
-        go.Barpolar(
-            r=scores,
-            theta=labels,
-            width=[43] * len(labels),
-            marker={
-                "color": [
-                    COLORS["plum"],
-                    COLORS["plum"],
-                    COLORS["plum"],
-                    COLORS["plum"],
-                    COLORS["sky"],
-                    COLORS["sky"],
-                ],
-                "line": {"color": "#fff", "width": 3},
-            },
-            opacity=0.9,
-            hovertemplate="%{theta}<br>Índice relativo: %{r:.0f}/100<extra></extra>",
-        )
-    )
-    index_fig.update_layout(
-        title=f"Perfil financeiro radial · Ano {latest_year}",
-        polar={
-            "hole": 0.38,
-            "bgcolor": COLORS["sky"],
-            "radialaxis": {
-                "range": [0, 100],
-                "showticklabels": False,
-                "showline": False,
-                "gridcolor": "rgba(80,24,57,.35)",
-            },
-            "angularaxis": {
-                "gridcolor": "rgba(80,24,57,.35)",
-                "linecolor": "#501839",
-                "tickfont": {"color": "#501839"},
-            },
-        },
-        showlegend=False,
-    )
-    index_fig.add_annotation(
-        text="NOUR",
-        x=0.5,
-        y=0.5,
-        xref="paper",
-        yref="paper",
-        showarrow=False,
-        font={"size": 16, "color": "#501839"},
-    )
+    index_fig = radial_figure(radar_values)
     risk = (
         operating.assign(
             prejuizo=operating.resultado_liquido.lt(0).astype(float),
@@ -486,20 +625,28 @@ def render_content(
         ]
         .mean()
     )
+    risk_labels = {
+        "prejuizo": "Prejuízo no ano",
+        "caixa_negativo": "Caixa negativo",
+        "liquidez_critica": "Liquidez abaixo de 1,0x",
+        "eva_negativo": "EVA negativo",
+    }
     risk_long = risk.melt(
         "ano_calendario", var_name="Evento", value_name="Probabilidade"
     )
+    risk_long["Evento"] = risk_long["Evento"].map(risk_labels)
     risk_fig = px.area(
         risk_long,
         x="ano_calendario",
         y="Probabilidade",
         color="Evento",
         title="Mapa de risco · probabilidade por ano",
+        labels={"ano_calendario": "Ano calendário"},
         color_discrete_map={
-            "prejuizo": "#501839",
-            "caixa_negativo": "#55a9e8",
-            "liquidez_critica": "#7a4b69",
-            "eva_negativo": "#2e7fb9",
+            risk_labels["prejuizo"]: "#501839",
+            risk_labels["caixa_negativo"]: "#55a9e8",
+            risk_labels["liquidez_critica"]: "#7a4b69",
+            risk_labels["eva_negativo"]: "#2e7fb9",
         },
     )
     risk_fig.update_yaxes(tickformat=".0%")
@@ -516,7 +663,7 @@ def render_content(
         insight(
             "Tração de receita",
             (
-                f"A mediana da receita variou {revenue_change:+.1%} frente ao ano anterior."
+                f"A mediana da receita variou {money(revenue_change)} frente ao ano anterior."
                 if revenue_change is not None
                 else "Não há ano anterior no recorte para comparar a receita."
             ),
@@ -524,7 +671,7 @@ def render_content(
         insight(
             "Eficiência operacional",
             (
-                f"A margem EBITDA mudou {margin_change:+.1%} no período, "
+                f"A margem EBITDA mudou {f'{margin_change * 100:+.1f}'.replace('.', ',')} p.p. no período, "
                 f"chegando a {percent(latest.margem_ebitda.median())}."
                 if margin_change is not None
                 else f"A margem EBITDA mediana é de {percent(latest.margem_ebitda.median())}."
@@ -540,7 +687,7 @@ def render_content(
     technical_insights = [
         insight(
             "Cobertura de curto prazo",
-            f"A liquidez corrente mediana é {latest.liquidez_corrente.median():.2f}x; "
+            f"A liquidez corrente mediana é {ratio(latest.liquidez_corrente.median())}; "
             f"{liquidity_risk:.0%} dos cenários ficam abaixo de 1,0x.",
             "alert" if liquidity_risk >= 0.10 else "positive",
         ),
@@ -552,8 +699,8 @@ def render_content(
         insight(
             "Faixa de incerteza",
             f"No ano mais recente, os 80% centrais de {METRIC_LABELS[selected_metric].lower()} "
-            f"vão de {percent(p10) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else f'{p10:.2f}x'} "
-            f"a {percent(p90) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else f'{p90:.2f}x'}.",
+            f"vão de {percent(p10) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else ratio(p10)} "
+            f"a {percent(p90) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else ratio(p90)}.",
         ),
     ]
     investor_insights = [
@@ -594,7 +741,18 @@ def render_content(
         y=["eva", "geracao_caixa"],
         markers=True,
         title="EVA e geração de caixa",
+        labels={
+            "ano_calendario": "Ano calendário",
+            "value": "Valor",
+            "eva": "EVA",
+            "geracao_caixa": "Geração de caixa",
+        },
         color_discrete_sequence=[COLORS["plum"], COLORS["sky"]],
+    )
+    value_fig.for_each_trace(
+        lambda trace: trace.update(
+            name={"eva": "EVA", "geracao_caixa": "Geração de caixa"}[trace.name]
+        )
     )
     value_fig.update_yaxes(tickprefix="R$ ", tickformat="~s")
     balance = pd.DataFrame(
@@ -661,29 +819,43 @@ def render_content(
     )
     if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
         distribution.update_yaxes(tickformat=".0%")
-    if perspective == "tecnica":
-        return [
-            section(
-                "Saúde financeira e controles",
-                f"Ano {latest_year} ({2026+latest_year}) · mediana do recorte selecionado",
-                [html.Div(tiles2, className="metrics-grid")],
-            ),
-            section(
-                "Leituras para controle",
-                "Interpretações calculadas a partir da mediana e da distribuição dos cenários selecionados.",
-                [html.Div(technical_insights, className="insights-grid")],
-            ),
-            section(
-                "Risco financeiro",
-                "Probabilidade empírica de eventos de liquidez, resultado e criação de valor.",
-                [chart(risk_fig)],
-            ),
-            section(
-                "Distribuição de cenários",
-                "Dispersão do indicador financeiro selecionado por ano.",
-                [chart(distribution)],
-            ),
+    # Non-breaking space before each separator so a wrap never starts a line with "·".
+    subtitle = " · ".join(
+        [
+            PERSPECTIVES[perspective],
+            f"Ano {latest_year} ({2026 + latest_year})",
+            f"{len(chosen_scenarios):,} cenários".replace(",", "."),
+            "Mediana do Recorte",
         ]
+    )
+
+    if perspective == "tecnica":
+        return page(
+            index_fig,
+            subtitle,
+            [
+                section(
+                    "Saúde financeira e controles",
+                    "Cobertura de curto prazo, estrutura de capital e retorno sobre o ativo.",
+                    [html.Div(tiles2, className="metrics-grid")],
+                ),
+                section(
+                    "Leituras para controle",
+                    "Interpretações calculadas a partir da mediana e da distribuição dos cenários selecionados.",
+                    [html.Div(technical_insights, className="insights-grid")],
+                ),
+                section(
+                    "Risco financeiro",
+                    "Probabilidade empírica de eventos de liquidez, resultado e criação de valor.",
+                    [chart(risk_fig)],
+                ),
+                section(
+                    "Distribuição de cenários",
+                    "Dispersão do indicador financeiro selecionado por ano.",
+                    [chart(distribution)],
+                ),
+            ],
+        )
 
     if perspective == "investidores":
         investor_tiles = [
@@ -701,23 +873,59 @@ def render_content(
             card("ROE", percent(latest.roe.median()), delta("roe")),
             card("EVA", money(latest.eva.median()), delta("eva")),
         ]
-        return [
+        return page(
+            index_fig,
+            subtitle,
+            [
+                section(
+                    "Retorno ao investidor",
+                    "Resultado, caixa e criação de valor no último ano do recorte.",
+                    [html.Div(investor_tiles, className="metrics-grid")],
+                ),
+                section(
+                    "Leituras para decisão de investimento",
+                    "O retorno é apresentado com sua incerteza; os textos acompanham o recorte de anos e cenários aplicado.",
+                    [html.Div(investor_insights, className="insights-grid")],
+                ),
+                section(
+                    "Valor e potencial de retorno",
+                    "Relação entre rentabilidade, criação de valor, caixa e estrutura de capital.",
+                    [
+                        html.Div(
+                            [chart(scatter), chart(value_fig), chart(balance_fig)],
+                            className="chart-grid",
+                        )
+                    ],
+                ),
+                *terminal_children,
+                section(
+                    "Distribuição de cenários",
+                    "Amplitude dos retornos e indicadores observados nos cenários selecionados.",
+                    [chart(distribution)],
+                ),
+            ],
+        )
+
+    return page(
+        index_fig,
+        subtitle,
+        [
             section(
-                "Retorno ao investidor",
-                f"Ano {latest_year} ({2026+latest_year}) · mediana do recorte selecionado",
-                [html.Div(investor_tiles, className="metrics-grid")],
+                "Resumo operacional",
+                "Receita, resultado e caixa no último ano do recorte.",
+                [html.Div(tiles1, className="metrics-grid")],
             ),
             section(
-                "Leituras para decisão de investimento",
-                "O retorno é apresentado com sua incerteza; os textos acompanham o recorte de anos e cenários aplicado.",
-                [html.Div(investor_insights, className="insights-grid")],
+                "Leituras para gestão",
+                "Sinais que conectam desempenho, margem e risco de execução no recorte selecionado.",
+                [html.Div(management_insights, className="insights-grid")],
             ),
             section(
-                "Valor e potencial de retorno",
-                "Relação entre rentabilidade, criação de valor, caixa e estrutura de capital.",
+                "Acompanhamento da operação",
+                "Evolução de receita, EBITDA e riscos que exigem ação de gestão.",
                 [
                     html.Div(
-                        [chart(scatter), chart(value_fig), chart(balance_fig)],
+                        [chart(trend), chart(value_fig), chart(risk_fig)],
                         className="chart-grid",
                     )
                 ],
@@ -725,39 +933,11 @@ def render_content(
             *terminal_children,
             section(
                 "Distribuição de cenários",
-                "Amplitude dos retornos e indicadores observados nos cenários selecionados.",
+                "Dispersão do indicador operacional selecionado por ano.",
                 [chart(distribution)],
             ),
-        ]
-
-    return [
-        section(
-            "Resumo operacional",
-            f"Ano {latest_year} ({2026+latest_year}) · mediana do recorte selecionado",
-            [html.Div(tiles1, className="metrics-grid")],
-        ),
-        section(
-            "Leituras para gestão",
-            "Sinais que conectam desempenho, margem e risco de execução no recorte selecionado.",
-            [html.Div(management_insights, className="insights-grid")],
-        ),
-        section(
-            "Acompanhamento da operação",
-            "Evolução de receita, EBITDA e riscos que exigem ação de gestão.",
-            [
-                html.Div(
-                    [chart(trend), chart(value_fig), chart(risk_fig)],
-                    className="chart-grid",
-                )
-            ],
-        ),
-        *terminal_children,
-        section(
-            "Distribuição de cenários",
-            "Dispersão do indicador operacional selecionado por ano.",
-            [chart(distribution)],
-        ),
-    ]
+        ],
+    )
 
 
 @app.callback(
@@ -775,6 +955,26 @@ def set_distribution_metrics(perspective):
 
 
 @app.callback(
+    Output("perspective-summary", "children"),
+    Input("perspective", "value"),
+)
+def describe_perspective(perspective):
+    return PERSPECTIVE_SUMMARIES.get(perspective, PERSPECTIVE_SUMMARIES["gestao"])
+
+
+@app.callback(Output("years-readout", "children"), Input("years", "value"))
+def show_year_range(years):
+    first, last = years
+    return str(first) if first == last else f"{first}–{last}"
+
+
+@app.callback(Output("scenarios-readout", "children"), Input("scenarios", "value"))
+def show_scenario_count(scenarios):
+    first, last = scenarios
+    return f"{last - first + 1:,}".replace(",", ".")
+
+
+@app.callback(
     Output("dashboard-content", "children"),
     Input("years", "value"),
     Input("scenarios", "value"),
@@ -788,7 +988,7 @@ def render(years, scenarios, selected_metric, perspective):
         app.logger.exception("Dashboard render failed")
         return [
             html.Div(
-                f"Could not render charts: {type(error).__name__}: {error}",
+                f"Não foi possível montar os gráficos: {type(error).__name__}: {error}",
                 className="empty-state",
             )
         ]
@@ -796,18 +996,9 @@ def render(years, scenarios, selected_metric, perspective):
 
 # Serve the first dashboard view in the initial HTML response. The callback
 # replaces it whenever the user changes a filter.
-try:
-    app.layout.children[0].children[1].children = render_content(
-        YEARS, SCENARIOS, "margem_ebitda", "gestao"
-    )
-except Exception as error:
-    app.logger.exception("Initial dashboard render failed")
-    app.layout.children[0].children[1].children = [
-        html.Div(
-            f"Could not render charts: {type(error).__name__}: {error}",
-            className="empty-state",
-        )
-    ]
+app.layout.children[0].children[0].children = render(
+    [min(YEARS), max(YEARS)], [1, len(SCENARIOS)], "margem_ebitda", "gestao"
+)
 
 
 if __name__ == "__main__":
