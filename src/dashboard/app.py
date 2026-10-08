@@ -496,7 +496,7 @@ def page(figure, subtitle, sections):
                     # `height: 100%`, which no stylesheet rule can outrank. That
                     # 100% resolves against an auto-height parent, so on every
                     # callback remount Plotly measures 0 and falls back to 700x450.
-                    style={"height": "clamp(420px, 62vh, 680px)", "width": "100%"},
+                    style={"height": "clamp(500px, 64vh, 700px)", "width": "100%"},
                 ),
             ],
             className="hero",
