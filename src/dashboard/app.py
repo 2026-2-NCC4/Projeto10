@@ -302,8 +302,7 @@ app.layout = html.Div(
                         )
                     ],
                 ),
-                panel(
-                    "Fonte",
+                html.Div(
                     [
                         html.Dl(
                             [
@@ -319,7 +318,7 @@ app.layout = html.Div(
                             className="meta-list",
                         )
                     ],
-                    open_by_default=False,
+                    className="meta-list brand-lockup",
                 ),
             ],
         ),

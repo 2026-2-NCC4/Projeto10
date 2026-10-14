@@ -11,6 +11,7 @@
   --fill-hover: #e9e9e9;
   --plum: #501839;
   --sky: #55a9e8;
+  --sky-weak: #c5e6ff;
   --sidebar-width: 340px;
   --radius: 6px;
 
@@ -88,7 +89,7 @@ body {
   background: var(--sky);
   overflow: hidden;
   min-height: 100svh;
-  padding: 24px;
+  padding: 28px 24px 24px;
 }
 
 .hero-copy {
@@ -117,7 +118,6 @@ body {
 /* Height lives in the Graph's inline `style` prop; see app.py. */
 .hero > .hero-chart {
   min-width: 0;
-  margin-top: 12px;
   height: 95svh;
 }
 
@@ -155,12 +155,12 @@ body {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1px;
-  background: var(--line);
-  border-block: 1px solid var(--line);
+  background: var(--ink);
+  border: 1px solid var(--ink);
 }
 
 .metric-card {
-  background: #ffffff;
+  background: var(--sky-weak);
   padding: 18px 20px 20px;
 }
 
@@ -196,7 +196,7 @@ body {
 
 .insight-card {
   padding: 18px 20px 20px;
-  border-top: 1px solid var(--line-strong);
+  border: 2px solid var(--line-strong);
 }
 
 .insight-card h3 {
