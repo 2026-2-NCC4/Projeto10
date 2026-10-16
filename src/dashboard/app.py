@@ -1,3 +1,80 @@
+"""NOUR Financial Dashboard — Interactive Analytics for CTI Global Concession.
+
+Implemented with Python, Dash (Plotly), and Pandas.
+Concession Period: 2027–2038 (12 Years, with simulated Monte Carlo scenarios).
+
+================================================================================
+QUICKSTART & EXECUTION
+================================================================================
+To run this dashboard locally from the repository root:
+    $ python src/dashboard/app.py
+    (or $ python dashboard/app.py if inside the src/ directory)
+
+Then open your browser at:
+    http://127.0.0.1:8050/
+
+================================================================================
+ARCHITECTURAL OVERVIEW
+================================================================================
+1. DATA INGESTION & PIPELINE (load_data):
+   - Reads processed CSV financial statements (DRE, Balanço Patrimonial, Fluxo de Caixa).
+   - Pivots ledger accounts into columnar tabular data.
+   - Normalizes Portuguese accounting account names (stripping accents and whitespace).
+   - Computes key financial KPIs (Margens, ROA, ROE, Liquidez, Endividamento, EVA).
+   - Handles Year 12 as a terminal liquidation year (contractual handback).
+
+2. METAMODEL & UI LOOKUPS:
+   - Perspective definitions ('gestao', 'tecnica', 'investidores').
+   - Metric labels and metric-to-perspective mappings.
+
+3. DESIGN SYSTEM & REUSABLE UI BUILDERS:
+   - Color palette tokens and typography settings.
+   - Formatters: money (R$ bi/mi), percent (%), ratio (x).
+   - Component wrappers: cards, insights, collapsible panels, and styled charts.
+   - Custom radial petal chart geometry (via petals.py) for relative KPI scoring.
+
+4. APPLICATION LAYOUT:
+   - Sidebar: Branding, Perspective tabs, Year range slider, Scenario slider, Metric selector, Metadata.
+   - Main content: Hero radial score chart + dynamic analytical sections.
+
+5. DYNAMIC RENDERING (render_content):
+   - Slices data by selected years and Monte Carlo scenarios.
+   - Computes medians, year-over-year variations, and risk probabilities.
+   - Assembles perspective-specific dashboards (Gestão, Técnica, Investidores).
+
+6. REACTIVE CALLBACKS (@app.callback):
+   - Synchronizes UI controls (e.g. updating available metrics when perspective changes).
+   - Updates interactive readout badges.
+   - Re-renders the entire main dashboard canvas upon filter modifications.
+
+================================================================================
+HOW TO MANAGE & EXTEND THIS DASHBOARD
+================================================================================
+- HOW TO ADD A NEW FINANCIAL METRIC:
+  1. In `load_data()`: Extract the underlying accounting account or compute the formula
+     on the `wide` DataFrame (e.g., `wide["ebit"] = col("DRE EBIT")`).
+  2. In `METRIC_LABELS`: Add its machine name and human-readable label
+     (e.g., `"ebit": "EBIT"`).
+  3. In `PERSPECTIVE_METRICS`: Add the metric key to the perspectives that should display it
+     (e.g., `'gestao': ['margem_ebitda', 'ebit', ...]`).
+  4. In `render_content()`: Add a metric card or chart trace if you wish to feature it.
+
+- HOW TO ADD A NEW STAKEHOLDER PERSPECTIVE:
+  1. In `PERSPECTIVES`: Add the key and display name (e.g., `"esg": "Sustentabilidade"`).
+  2. In `PERSPECTIVE_SUMMARIES`: Add a descriptive subtitle for the sidebar.
+  3. In `PERSPECTIVE_METRICS`: Define which metrics will be selectable for this perspective.
+  4. In `render_content()`: Add an `if perspective == "esg": return page(...)` branch
+     with the custom sections, cards, and charts relevant to that audience.
+
+- HOW TO TWEAK ALERT THRESHOLDS:
+  - In `render_content()`, search for `insight(` calls.
+  - For example, `cash_risk >= 0.10` triggers an "alert" tone. Change `0.10` (10%) to your
+    desired tolerance threshold.
+
+- HOW TO CHANGE COLOR THEMES:
+  - Edit the `COLORS` dictionary below. Update CSS variables in `style.css` to match.
+"""
+
 # ==============================================================================
 # IMPORTS & SYSTEM DEPENDENCIES
 # ==============================================================================
