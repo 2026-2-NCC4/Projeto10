@@ -105,6 +105,8 @@ from metrics_kpi.yearly_aggregates import compute_yearly_medians
 from metrics_kpi.charts import create_trend_chart
 from metrics_kpi.radar_normalization import compute_radar_scores
 from metrics_kpi.hero_radial import radial_figure
+from metrics_kpi.risk_analysis import compute_risk_probabilities
+from metrics_kpi.charts import create_risk_chart
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
@@ -391,64 +393,23 @@ def render_content(
     # 3. COMPUTE YEARLY MEDIANS FOR TIME-SERIES VISUALIZATIONS
     # --------------------------------------------------------------------------
     by_year = compute_yearly_medians(operating)
-
     # REVENUE & EBITDA TREND AREA CHART
     trend = create_trend_chart(by_year, COLORS)
-
+    
     # --------------------------------------------------------------------------
     # 4. RADIAL PETAL HERO CHART (RELATIVE 0-100 NORMALIZATION)
     # --------------------------------------------------------------------------
-    # Normalizes current median against the 5th and 95th percentiles of historical data,
-    # ensuring robust 0-100 relative scores without outlier distortion.
     scored_labels = compute_radar_scores(operating, latest)
     index_fig = radial_figure(scored_labels)
 
     # --------------------------------------------------------------------------
     # 5. MONTE CARLO RISK ANALYSIS MATRIX
-    # --------------------------------------------------------------------------
-    # Evaluates binary adverse conditions across all simulated scenarios per year:
-    # - Net Loss (Resultado Líquido < 0)
-    # - Negative Cash (Saldo Final de Caixa < 0)
-    # - Critical Liquidity (Liquidez Corrente < 1.0x)
-    # - Value Destruction (EVA < 0)
-    risk = (
-        operating.assign(
-            prejuizo=operating.resultado_liquido.lt(0).astype(float),
-            caixa_negativo=operating.saldo_final_caixa.lt(0).astype(float),
-            liquidez_critica=operating.liquidez_corrente.lt(1).astype(float),
-            eva_negativo=operating.eva.lt(0).astype(float),
-        )
-        .groupby("ano_calendario", as_index=False)[
-            ["prejuizo", "caixa_negativo", "liquidez_critica", "eva_negativo"]
-        ]
-        .mean()
-    )
-    risk_labels = {
-        "prejuizo": "Prejuízo no ano",
-        "caixa_negativo": "Caixa negativo",
-        "liquidez_critica": "Liquidez abaixo de 1,0x",
-        "eva_negativo": "EVA negativo",
-    }
-    risk_long = risk.melt(
-        "ano_calendario", var_name="Evento", value_name="Probabilidade"
-    )
-    risk_long["Evento"] = risk_long["Evento"].map(risk_labels)
-    risk_fig = px.area(
-        risk_long,
-        x="ano_calendario",
-        y="Probabilidade",
-        color="Evento",
-        title="Mapa de risco · probabilidade por ano",
-        labels={"ano_calendario": "Ano calendário"},
-        color_discrete_map={
-            risk_labels["prejuizo"]: "#501839",
-            risk_labels["caixa_negativo"]: "#55a9e8",
-            risk_labels["liquidez_critica"]: "#7a4b69",
-            risk_labels["eva_negativo"]: "#2e7fb9",
-        },
-    )
-    risk_fig.update_yaxes(tickformat=".0%")
-
+    # -------------------------------------------------------------------------
+    # 1. Processa os dados de risco
+    risk_long, risk_labels = compute_risk_probabilities(operating)
+    # 2. Gera o gráfico de risco
+    risk_fig = create_risk_chart(risk_long, risk_labels)
+    
     # --------------------------------------------------------------------------
     # 6. DYNAMIC NARRATIVE INSIGHTS (THRESHOLD-DRIVEN)
     # --------------------------------------------------------------------------
