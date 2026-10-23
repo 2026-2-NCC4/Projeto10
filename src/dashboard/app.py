@@ -97,13 +97,14 @@ from petals import petal
 # Data Loader files
 from data_loader import load_data
 from ui_elements import row, panel, money, percent, ratio, card, insight, section, chart
-from hero_radial import radial_figure
+from dashboard.metrics_kpi.hero_radial import radial_figure
 from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_SUMMARIES, PERSPECTIVE_METRICS
 from metrics_kpi.operational_overview import build_operational_overview_tiles
 from metrics_kpi.technical_control import build_technical_controls_tiles
 from metrics_kpi.yearly_aggregates import compute_yearly_medians
 from metrics_kpi.charts import create_trend_chart
-
+from metrics_kpi.radar_normalization import compute_radar_scores
+from metrics_kpi.hero_radial import radial_figure
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
@@ -399,25 +400,8 @@ def render_content(
     # --------------------------------------------------------------------------
     # Normalizes current median against the 5th and 95th percentiles of historical data,
     # ensuring robust 0-100 relative scores without outlier distortion.
-    radar_metrics = [
-        ("Margem", "margem_ebitda"),
-        ("ROE", "roe"),
-        ("Liquidez", "liquidez_corrente"),
-        ("EVA", "eva"),
-        ("Caixa", "geracao_caixa"),
-        ("Receita", "receita"),
-    ]
-    radar_values = []
-    for label, key in radar_metrics:
-        vals, med = operating[key].dropna(), latest[key].median()
-        lo, hi = vals.quantile(0.05), vals.quantile(0.95)
-        score = (
-            50
-            if pd.isna(med) or hi == lo
-            else max(8, min(100, 12 + 88 * (med - lo) / (hi - lo)))
-        )
-        radar_values.append((label, score))
-    index_fig = radial_figure(radar_values)
+    scored_labels = compute_radar_scores(operating, latest)
+    index_fig = radial_figure(scored_labels)
 
     # --------------------------------------------------------------------------
     # 5. MONTE CARLO RISK ANALYSIS MATRIX
