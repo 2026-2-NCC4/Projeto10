@@ -102,12 +102,28 @@ from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_
 from metrics_kpi.operational_overview import build_operational_overview_tiles
 from metrics_kpi.technical_control import build_technical_controls_tiles
 from metrics_kpi.yearly_aggregates import compute_yearly_medians
-from metrics_kpi.charts import create_trend_chart
+from metrics_kpi.charts import (
+    create_trend_chart,
+    create_distribution_chart,
+    create_risk_chart,
+    create_investor_scatter_chart,
+    create_value_cash_chart,
+    create_balance_chart,
+)
 from metrics_kpi.radar_normalization import compute_radar_scores
 from metrics_kpi.hero_radial import radial_figure
 from metrics_kpi.risk_analysis import compute_risk_probabilities
-from metrics_kpi.charts import create_risk_chart
 from metrics_kpi.dynamic_insights import compute_dynamic_insights
+from metrics_kpi.balance_metrics import compute_balance_structure
+from metrics_kpi.terminal_liquidation import build_terminal_liquidation_section
+
+#Perspectives views
+from perspectives.technical import render_technical_view
+from perspectives.investors import render_investor_view
+from perspectives.management import render_management_view
+from perspectives.dashboard_layout import create_main_layout
+
+
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
 # ==============================================================================
@@ -130,15 +146,8 @@ DATA_PATH = next(
     ROOT / "src" / "data" / "processed" / "Dados_Formatados_CTI.csv",
 )
 
-# DATA LOADER
-DATA = load_data(DATA_PATH)
-
-# ==============================================================================
-# GLOBAL METAMODEL & UI CONFIGURATION LOOKUPS
-# ==============================================================================
 # Load data once at startup (singleton pattern in memory)
 DATA = load_data(DATA_PATH)
-
 # Unique concession years (1 to 12) and simulated Monte Carlo scenarios
 YEARS = sorted(DATA.ano_num.unique())
 SCENARIOS = sorted(DATA["Cenário"].dropna().unique())
@@ -153,175 +162,9 @@ app = Dash(
     suppress_callback_exceptions=True,        # Permits dynamic component IDs across tabs
 )
 
-# Expose underlying Flask WSGI server (required for deployment via Gunicorn, Waitress, etc.)
 server = app.server
 
-# ==============================================================================
-# DASHBOARD PAGE SHELL
-# ==============================================================================
-def page(figure, subtitle, sections):
-    """Assemble the hero header banner and the vertical stack of content sections."""
-    return [
-        html.Section(
-            [
-                html.Div(
-                    [html.H1("Painel financeiro"), html.P(subtitle)],
-                    className="hero-copy",
-                ),
-                dcc.Graph(
-                    figure=figure,
-                    config={"displayModeBar": False},
-                    responsive=True,
-                    className="hero-chart",
-                    # Style note: dcc.Graph sets inline height: 100%, which defaults to 0
-                    # on auto-height parents. Explicit clamp guarantees responsive height.
-                    style={"height": "clamp(500px, 64vh, 700px)", "width": "100%"},
-                ),
-            ],
-            className="hero",
-        ),
-        html.Div(sections, className="stack"),
-    ]
-
-
-# ==============================================================================
-# MASTER DASHBOARD LAYOUT DEFINITION (DOM TREE)
-# ==============================================================================
-app.layout = html.Div(
-    className="dashboard",
-    children=[
-        # Main area: Hosts dynamic dashboard content rendered by the reactive callback
-        html.Main(
-            className="main",
-            children=[html.Div(id="dashboard-content", className="content")],
-        ),
-        # Sidebar: Hosts branding, interactive filters, and metadata
-        html.Aside(
-            className="sidebar",
-            children=[
-                # BRAND LOCKUP
-                html.Div(
-                    [
-                        html.Div("NOUR", className="brand"),
-                        html.Div(
-                            "CTI Global | Concessão 2027–2038",
-                            className="brand-caption",
-                        ),
-                    ],
-                    className="brand-lockup",
-                ),
-                # FILTER PANEL 1: PERSPECTIVE SELECTOR
-                panel(
-                    "Perspectiva",
-                    [
-                        dcc.Tabs(
-                            id="perspective",
-                            value="gestao",
-                            className="segmented",
-                            parent_className="segmented-parent",
-                            content_className="segmented-content",
-                            children=[
-                                dcc.Tab(
-                                    label=label,
-                                    value=key,
-                                    className="segment",
-                                    selected_className="segment--on",
-                                )
-                                for key, label in PERSPECTIVES.items()
-                            ],
-                        ),
-                        html.P(
-                            PERSPECTIVE_SUMMARIES["gestao"],
-                            id="perspective-summary",
-                            className="panel-note",
-                        ),
-                    ],
-                ),
-                # FILTER PANEL 2: DATA SLICING (YEARS & SCENARIOS)
-                panel(
-                    "Recorte",
-                    [
-                        # Year range slider (Concession Years 1 through 12)
-                        row(
-                            "Anos da concessão",
-                            dcc.RangeSlider(
-                                id="years",
-                                min=min(YEARS),
-                                max=max(YEARS),
-                                step=1,
-                                value=[min(YEARS), max(YEARS)],
-                                marks=None,
-                                tooltip={"placement": "bottom"},
-                            ),
-                            html.Output(
-                                f"{min(YEARS)}–{max(YEARS)}",
-                                id="years-readout",
-                                className="readout",
-                            ),
-                        ),
-                        # Monte Carlo scenario range slider
-                        row(
-                            "Cenários simulados",
-                            dcc.RangeSlider(
-                                id="scenarios",
-                                min=1,
-                                max=len(SCENARIOS),
-                                step=1,
-                                value=[1, len(SCENARIOS)],
-                                marks=None,
-                                tooltip={"placement": "bottom"},
-                            ),
-                            html.Output(
-                                f"{len(SCENARIOS):,}".replace(",", "."),
-                                id="scenarios-readout",
-                                className="readout",
-                            ),
-                        ),
-                    ],
-                ),
-                # FILTER PANEL 3: METRIC DISTRIBUTION SELECTOR
-                panel(
-                    "Indicador",
-                    [
-                        row(
-                            "Distribuição",
-                            dcc.Dropdown(
-                                id="distribution-metric",
-                                options=[
-                                    {"label": label, "value": key}
-                                    for key, label in METRIC_LABELS.items()
-                                    if key in PERSPECTIVE_METRICS["gestao"]
-                                ],
-                                value="margem_ebitda",
-                                clearable=False,
-                            ),
-                        )
-                    ],
-                ),
-                # METADATA & DATASET PROVENANCE
-                html.Div(
-                    [
-                        html.Dl(
-                            [
-                                html.Dt("Base"),
-                                html.Dd("Dados formatados CTI"),
-                                html.Dt("Atualização"),
-                                html.Dd("Leitura direta do arquivo local"),
-                                html.Dt("Cobertura"),
-                                html.Dd(
-                                    f"{len(SCENARIOS)} cenários · {len(YEARS)} anos"
-                                ),
-                            ],
-                            className="meta-list",
-                        )
-                    ],
-                    className="meta-list brand-lockup",
-                ),
-            ],
-        ),
-    ],
-)
-
+app.layout = create_main_layout(YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS)
 
 # ==============================================================================
 # CORE DYNAMIC RENDERING ENGINE
@@ -329,17 +172,6 @@ app.layout = html.Div(
 def render_content(
     years, scenarios, selected_metric="margem_ebitda", perspective="gestao"
 ):
-    """Render the dashboard content dynamically based on user-selected filters.
-
-    Parameters:
-        years (list): [min_year, max_year] selected on the concession years slider.
-        scenarios (list): [min_idx, max_idx] selected on the scenario count slider.
-        selected_metric (str): Key of the metric chosen for distribution analysis.
-        perspective (str): Active stakeholder perspective ('gestao', 'tecnica', 'investidores').
-
-    Returns:
-        list: Component hierarchy forming the full page for the selected perspective.
-    """
     # --------------------------------------------------------------------------
     # 1. PARAMETER SANITIZATION & FILTERING
     # --------------------------------------------------------------------------
@@ -350,7 +182,6 @@ def render_content(
     selected_metric = (
         selected_metric if selected_metric in allowed_metrics else allowed_metrics[0]
     )
-
     # Slice the chosen subset of scenarios
     chosen_scenarios = SCENARIOS[scenario_from - 1 : scenario_to]
 
@@ -388,20 +219,17 @@ def render_content(
     # Operational overview tiles (Revenue, EBITDA, Net Result, Cash Gen, Debt)
     tiles1 = build_operational_overview_tiles(latest, prev)
     tiles2 = build_technical_controls_tiles(latest, prev)
-
     # --------------------------------------------------------------------------
     # 3. COMPUTE YEARLY MEDIANS FOR TIME-SERIES VISUALIZATIONS
     # --------------------------------------------------------------------------
     by_year = compute_yearly_medians(operating)
     # REVENUE & EBITDA TREND AREA CHART
     trend = create_trend_chart(by_year, COLORS)
-    
     # --------------------------------------------------------------------------
     # 4. RADIAL PETAL HERO CHART (RELATIVE 0-100 NORMALIZATION)
     # --------------------------------------------------------------------------
     scored_labels = compute_radar_scores(operating, latest)
     index_fig = radial_figure(scored_labels)
-
     # --------------------------------------------------------------------------
     # 5. MONTE CARLO RISK ANALYSIS MATRIX
     # -------------------------------------------------------------------------
@@ -409,7 +237,6 @@ def render_content(
     risk_long, risk_labels = compute_risk_probabilities(operating)
     # 2. Gera o gráfico de risco
     risk_fig = create_risk_chart(risk_long, risk_labels)
-    
     # --------------------------------------------------------------------------
     # 6. DYNAMIC NARRATIVE INSIGHTS (THRESHOLD-DRIVEN)
     # --------------------------------------------------------------------------
@@ -419,121 +246,27 @@ def render_content(
     management_insights, technical_insights, investor_insights = compute_dynamic_insights(
         latest, prev, risk, latest_year, selected_metric, METRIC_LABELS
     )
-
     # --------------------------------------------------------------------------
     # 7. INVESTOR CHARTS (SCATTER, VALUE CREATION, BALANCE STRUCTURE)
     # --------------------------------------------------------------------------
     # Scatter plot: EBITDA Margin vs. EVA across all simulated scenarios
-    scatter = px.scatter(
-        latest,
-        x="margem_ebitda",
-        y="eva",
-        color="Cenário",
-        size="receita",
-        size_max=20,
-        opacity=0.72,
-        title=f"Cenários · margem EBITDA e EVA · Ano {latest_year}",
-        labels={"margem_ebitda": "Margem EBITDA", "eva": "EVA (R$)"},
-        color_discrete_sequence=[COLORS["plum"], COLORS["sky"]],
-    )
-    scatter.update_xaxes(tickformat=".0%")
-
-    # Line chart: EVA vs. Operating Cash Generation over the concession timeline
-    value_fig = px.line(
-        by_year,
-        x="ano_calendario",
-        y=["eva", "geracao_caixa"],
-        markers=True,
-        title="EVA e geração de caixa",
-        labels={
-            "ano_calendario": "Ano calendário",
-            "value": "Valor",
-            "eva": "EVA",
-            "geracao_caixa": "Geração de caixa",
-        },
-        color_discrete_sequence=[COLORS["plum"], COLORS["sky"]],
-    )
-    value_fig.for_each_trace(
-        lambda trace: trace.update(
-            name={"eva": "EVA", "geracao_caixa": "Geração de caixa"}[trace.name]
-        )
-    )
-    value_fig.update_yaxes(tickprefix="R$ ", tickformat="~s")
-
-    # Bar chart: Balance structure comparison (Total Debt vs Cash vs Net Equity)
-    balance = pd.DataFrame(
-        {
-            "Componente": ["Dívida total", "Caixa disponível", "Patrimônio líquido"],
-            "Valor": [
-                latest.divida_total.median(),
-                latest.caixa.median(),
-                latest.patrimonio_liquido.median(),
-            ],
-        }
-    )
-    balance_fig = px.bar(
-        balance,
-        x="Componente",
-        y="Valor",
-        title=f"Estrutura financeira · Ano {latest_year}",
-        color="Componente",
-        color_discrete_map={
-            "Dívida total": "#501839",
-            "Caixa disponível": "#55a9e8",
-            "Patrimônio líquido": "#7a4b69",
-        },
-    )
-    balance_fig.update_layout(showlegend=False)
-
+    # 1. Prepara dados do balanço
+    balance = compute_balance_structure(latest)
+    # 2. Gera os gráficos dos investidores
+    scatter = create_investor_scatter_chart(latest, latest_year, COLORS)
+    value_fig = create_value_cash_chart(by_year, COLORS)
+    balance_fig = create_balance_chart(balance, latest_year)
     # --------------------------------------------------------------------------
     # 8. TERMINAL CONCESSION LIQUIDATION SECTION (YEAR 12)
     # --------------------------------------------------------------------------
-    terminal = filtered[filtered.encerramento]
-    terminal_children = []
-    if not terminal.empty:
-        terminal_tiles = [
-            card(label, money(terminal[key].median()))
-            for label, key in [
-                ("Caixa inicial", "saldo_inicial_caixa"),
-                ("Geração de caixa", "geracao_caixa"),
-                ("Investimentos", "investimentos"),
-                ("Distribuição ao acionista", "distribuicao_acionista"),
-                ("Caixa final", "saldo_final_caixa"),
-            ]
-        ]
-        terminal_children = [
-            section(
-                "Liquidação contratual",
-                "Ano 12 · encerramento planejado separado da operação recorrente.",
-                [
-                    html.Div(terminal_tiles, className="metrics-grid"),
-                    html.P(
-                        "Saldos liquidados não entram nas tendências operacionais. A base não detalha a destinação contratual de cada ativo.",
-                        className="notice",
-                    ),
-                ],
-            )
-        ]
-
+    # Gera os componentes da liquidação terminal (caso existam dados de encerramento)
+    terminal_children = build_terminal_liquidation_section(filtered)
     # --------------------------------------------------------------------------
     # 9. SCENARIO DISTRIBUTION BOXPLOT
     # --------------------------------------------------------------------------
-    distribution = px.box(
-        operating,
-        x="ano_calendario",
-        y=selected_metric,
-        points=False,
-        title=f"Distribuição dos cenários · {METRIC_LABELS[selected_metric]}",
-        labels={
-            "ano_calendario": "Ano calendário",
-            selected_metric: METRIC_LABELS[selected_metric],
-        },
-        color_discrete_sequence=[COLORS["plum"]],
-    )
-    if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
-        distribution.update_yaxes(tickformat=".0%")
-
-    # Subtitle with non-breaking spaces before separators
+    # Gera o gráfico de distribuição dos cenários
+    distribution = create_distribution_chart(operating, selected_metric, METRIC_LABELS, COLORS)
+    # Subtitle formatado com separadores
     subtitle = " · ".join(
         [
             PERSPECTIVES[perspective],
@@ -542,121 +275,22 @@ def render_content(
             "Mediana do Recorte",
         ]
     )
-
     # --------------------------------------------------------------------------
     # 10. PERSPECTIVE VIEW ROUTING
     # --------------------------------------------------------------------------
-    # View A: Technical / Controllership
     if perspective == "tecnica":
-        return page(
-            index_fig,
-            subtitle,
-            [
-                section(
-                    "Saúde financeira e controles",
-                    "Cobertura de curto prazo, estrutura de capital e retorno sobre o ativo.",
-                    [html.Div(tiles2, className="metrics-grid")],
-                ),
-                section(
-                    "Leituras para controle",
-                    "Interpretações calculadas a partir da mediana e da distribuição dos cenários selecionados.",
-                    [html.Div(technical_insights, className="insights-grid")],
-                ),
-                section(
-                    "Risco financeiro",
-                    "Probabilidade empírica de eventos de liquidez, resultado e criação de valor.",
-                    [chart(risk_fig)],
-                ),
-                section(
-                    "Distribuição de cenários",
-                    "Dispersão do indicador financeiro selecionado por ano.",
-                    [chart(distribution)],
-                ),
-            ],
-        )
+        return render_technical_view(index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution)
 
-    # View B: Investors / Shareholders
     if perspective == "investidores":
-        investor_tiles = [
-            card("EBITDA", money(latest.ebitda.median()), delta("ebitda")),
-            card(
-                "Resultado líquido",
-                money(latest.resultado_liquido.median()),
-                delta("resultado_liquido"),
-            ),
-            card(
-                "Geração de caixa",
-                money(latest.geracao_caixa.median()),
-                delta("geracao_caixa"),
-            ),
-            card("ROE", percent(latest.roe.median()), delta("roe")),
-            card("EVA", money(latest.eva.median()), delta("eva")),
-        ]
-        return page(
-            index_fig,
-            subtitle,
-            [
-                section(
-                    "Retorno ao investidor",
-                    "Resultado, caixa e criação de valor no último ano do recorte.",
-                    [html.Div(investor_tiles, className="metrics-grid")],
-                ),
-                section(
-                    "Leituras para decisão de investimento",
-                    "O retorno é apresentado com sua incerteza; os textos acompanham o recorte de anos e cenários aplicado.",
-                    [html.Div(investor_insights, className="insights-grid")],
-                ),
-                section(
-                    "Valor e potencial de retorno",
-                    "Relação entre rentabilidade, criação de valor, caixa e estrutura de capital.",
-                    [
-                        html.Div(
-                            [chart(scatter), chart(value_fig), chart(balance_fig)],
-                            className="chart-grid",
-                        )
-                    ],
-                ),
-                *terminal_children,
-                section(
-                    "Distribuição de cenários",
-                    "Amplitude dos retornos e indicadores observados nos cenários selecionados.",
-                    [chart(distribution)],
-                ),
-            ],
+        return render_investor_view(
+            index_fig, subtitle, latest, delta, investor_insights, 
+            scatter, value_fig, balance_fig, terminal_children, distribution
         )
 
-    # View C: Management / Executive (Default fallback)
-    return page(
-        index_fig,
-        subtitle,
-        [
-            section(
-                "Resumo operacional",
-                "Receita, resultado e caixa no último ano do recorte.",
-                [html.Div(tiles1, className="metrics-grid")],
-            ),
-            section(
-                "Leituras para gestão",
-                "Sinais que conectam desempenho, margem e risco de execução no recorte selecionado.",
-                [html.Div(management_insights, className="insights-grid")],
-            ),
-            section(
-                "Acompanhamento da operação",
-                "Evolução de receita, EBITDA e riscos que exigem ação de gestão.",
-                [
-                    html.Div(
-                        [chart(trend), chart(value_fig), chart(risk_fig)],
-                        className="chart-grid",
-                    )
-                ],
-            ),
-            *terminal_children,
-            section(
-                "Distribuição de cenários",
-                "Dispersão do indicador operacional selecionado por ano.",
-                [chart(distribution)],
-            ),
-        ],
+    # Default: Management / Executive
+    return render_management_view(
+        index_fig, subtitle, tiles1, management_insights, 
+        trend, value_fig, risk_fig, terminal_children, distribution
     )
 
 
@@ -713,11 +347,6 @@ def show_scenario_count(scenarios):
     Input("perspective", "value"),
 )
 def render(years, scenarios, selected_metric, perspective):
-    """Master callback: Re-render the main dashboard whenever any filter is adjusted.
-
-    Includes top-level exception handling so errors produce a visible notice in the UI
-    rather than crashing the client or leaving an unresponsive blank screen.
-    """
     try:
         return render_content(years, scenarios, selected_metric, perspective)
     except Exception as error:
