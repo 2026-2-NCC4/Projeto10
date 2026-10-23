@@ -32,4 +32,4 @@ def compute_risk_probabilities(operating):
         "ano_calendario", var_name="Evento", value_name="Probabilidade"
     )
     risk_long["Evento"] = risk_long["Evento"].map(risk_labels)
-    return risk_long, risk_labels
+    return risk_long, risk_labels, risk

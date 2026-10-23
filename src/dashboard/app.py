@@ -107,7 +107,7 @@ from metrics_kpi.radar_normalization import compute_radar_scores
 from metrics_kpi.hero_radial import radial_figure
 from metrics_kpi.risk_analysis import compute_risk_probabilities
 from metrics_kpi.charts import create_risk_chart
-
+from metrics_kpi.dynamic_insights import compute_dynamic_insights
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
 # ==============================================================================
@@ -413,83 +413,12 @@ def render_content(
     # --------------------------------------------------------------------------
     # 6. DYNAMIC NARRATIVE INSIGHTS (THRESHOLD-DRIVEN)
     # --------------------------------------------------------------------------
-    latest_risk = risk.loc[risk["ano_calendario"].eq(2026 + latest_year)].iloc[0]
-    revenue_change = delta("receita")
-    margin_change = delta("margem_ebitda")
-    cash_risk = latest_risk["caixa_negativo"]
-    liquidity_risk = latest_risk["liquidez_critica"]
-    eva_risk = latest_risk["eva_negativo"]
-    selected_values = latest[selected_metric].dropna()
-    p10, p90 = selected_values.quantile([0.10, 0.90])
-
+    risk_long, risk_labels, risk = compute_risk_probabilities(operating)
     # Management Perspective Insights
-    management_insights = [
-        insight(
-            "Tração de receita",
-            (
-                f"A mediana da receita variou {money(revenue_change)} frente ao ano anterior."
-                if revenue_change is not None
-                else "Não há ano anterior no recorte para comparar a receita."
-            ),
-        ),
-        insight(
-            "Eficiência operacional",
-            (
-                f"A margem EBITDA mudou {f'{margin_change * 100:+.1f}'.replace('.', ',')} p.p. no período, "
-                f"chegando a {percent(latest.margem_ebitda.median())}."
-                if margin_change is not None
-                else f"A margem EBITDA mediana é de {percent(latest.margem_ebitda.median())}."
-            ),
-        ),
-        insight(
-            "Prioridade de caixa",
-            f"{cash_risk:.0%} dos cenários encerram o ano com caixa negativo; "
-            "esse é o principal sinal para acompanhar no plano de ação.",
-            "alert" if cash_risk >= 0.10 else "positive",
-        ),
-    ]
-
-    # Technical / Controllership Insights
-    technical_insights = [
-        insight(
-            "Cobertura de curto prazo",
-            f"A liquidez corrente mediana é {ratio(latest.liquidez_corrente.median())}; "
-            f"{liquidity_risk:.0%} dos cenários ficam abaixo de 1,0x.",
-            "alert" if liquidity_risk >= 0.10 else "positive",
-        ),
-        insight(
-            "Dependência de terceiros",
-            f"O capital de terceiros representa, na mediana, "
-            f"{percent(latest.participacao_capital_terceiros.median())} do patrimônio líquido.",
-        ),
-        insight(
-            "Faixa de incerteza",
-            f"No ano mais recente, os 80% centrais de {METRIC_LABELS[selected_metric].lower()} "
-            f"vão de {percent(p10) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else ratio(p10)} "
-            f"a {percent(p90) if selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'} else ratio(p90)}.",
-        ),
-    ]
-
-    # Investor / Shareholder Insights
-    investor_insights = [
-        insight(
-            "Criação de valor",
-            f"O EVA mediano é {money(latest.eva.median())}; "
-            f"{eva_risk:.0%} dos cenários apresentam EVA negativo no ano.",
-            "alert" if eva_risk >= 0.10 else "positive",
-        ),
-        insight(
-            "Retorno sobre o capital",
-            f"O ROE mediano é {percent(latest.roe.median())}. "
-            "Leia este indicador junto à estrutura de capital e à dispersão entre cenários.",
-        ),
-        insight(
-            "Assimetria de cenários",
-            f"Para {METRIC_LABELS[selected_metric].lower()}, os percentis 10 e 90 no ano são "
-            f"{percent(p10) if selected_metric in {'margem_ebitda', 'roa', 'roe'} else money(p10)} e "
-            f"{percent(p90) if selected_metric in {'margem_ebitda', 'roa', 'roe'} else money(p90)}.",
-        ),
-    ]
+    # Gera todos os blocos de insights dinâmicos baseados no contexto atual
+    management_insights, technical_insights, investor_insights = compute_dynamic_insights(
+        latest, prev, risk, latest_year, selected_metric, METRIC_LABELS
+    )
 
     # --------------------------------------------------------------------------
     # 7. INVESTOR CHARTS (SCATTER, VALUE CREATION, BALANCE STRUCTURE)
