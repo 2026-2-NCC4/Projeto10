@@ -100,6 +100,7 @@ from ui_elements import row, panel, money, percent, ratio, card, insight, sectio
 from hero_radial import radial_figure
 from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_SUMMARIES, PERSPECTIVE_METRICS
 from metrics_kpi.operational_overview import build_operational_overview_tiles
+from metrics_kpi.technical_control import build_technical_controls_tiles
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
 # ==============================================================================
@@ -379,20 +380,8 @@ def render_content(
     # --------------------------------------------------------------------------
     # Operational overview tiles (Revenue, EBITDA, Net Result, Cash Gen, Debt)
     tiles1 = build_operational_overview_tiles(latest, prev)
-
-    # Technical controls & liquidity tiles (Margins, ROA, ROE, Current & General Liquidity)
-    tiles2 = [
-        card(
-            "Margem EBITDA",
-            percent(latest.margem_ebitda.median()),
-            delta("margem_ebitda"),
-        ),
-        card("ROA", percent(latest.roa.median()), delta("roa")),
-        card("ROE", percent(latest.roe.median()), delta("roe")),
-        card("Liquidez corrente", ratio(latest.liquidez_corrente.median())),
-        card("Liquidez geral", ratio(latest.liquidez_geral.median())),
-    ]
-
+    tiles2 = build_technical_controls_tiles(latest, prev)
+    
     # --------------------------------------------------------------------------
     # 3. COMPUTE YEARLY MEDIANS FOR TIME-SERIES VISUALIZATIONS
     # --------------------------------------------------------------------------
