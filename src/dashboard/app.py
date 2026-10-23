@@ -98,7 +98,8 @@ from petals import petal
 from data_loader import load_data
 from ui_elements import row, panel, money, percent, ratio, card, insight, section, chart
 from hero_radial import radial_figure
-
+from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_SUMMARIES, PERSPECTIVE_METRICS
+from metrics_kpi.operational_overview import build_operational_overview_tiles
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
 # ==============================================================================
@@ -123,25 +124,7 @@ DATA_PATH = next(
 
 # DATA LOADER
 DATA = load_data(DATA_PATH)
-# ==============================================================================
-# DESIGN SYSTEM TOKENS (TYPOGRAPHY & PALETTE)
-# ==============================================================================
-# System font stack prioritizing native OS rendering for clean modern typography
-FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
-# Semantic color palette used across charts, badges, and indicator cards:
-# - ink: Primary text, axis lines, titles
-# - teal / sky: Positive trends, revenue, available cash, liquid assets
-# - plum / amber / red: Deep accents, EBITDA, equity, risk highlights, debt
-COLORS = {
-    "ink": "#111111",
-    "teal": "#55a9e8",
-    "blue": "#55a9e8",
-    "amber": "#501839",
-    "red": "#501839",
-    "plum": "#501839",
-    "sky": "#55a9e8",
-}
 # ==============================================================================
 # GLOBAL METAMODEL & UI CONFIGURATION LOOKUPS
 # ==============================================================================
@@ -151,50 +134,6 @@ DATA = load_data(DATA_PATH)
 # Unique concession years (1 to 12) and simulated Monte Carlo scenarios
 YEARS = sorted(DATA.ano_num.unique())
 SCENARIOS = sorted(DATA["Cenário"].dropna().unique())
-
-# Human-readable labels for metric keys (used in dropdowns, tooltips, and axis titles)
-METRIC_LABELS = {
-    "margem_ebitda": "Margem EBITDA",
-    "roa": "ROA",
-    "roe": "ROE",
-    "liquidez_corrente": "Liquidez corrente",
-    "liquidez_seca": "Liquidez seca",
-    "liquidez_imediata": "Liquidez imediata",
-    "liquidez_geral": "Liquidez geral",
-    "participacao_capital_terceiros": "Participação de capital de terceiros",
-    "composicao_endividamento": "Composição do endividamento",
-    "imobilizacao_pl": "Imobilização do PL",
-    "eva": "EVA",
-}
-
-# The three executive perspectives tailored for different stakeholder groups
-PERSPECTIVES = {
-    "tecnica": "Técnica",           # Controllership, Treasury, Risk & Compliance
-    "gestao": "Gestão",             # Executive Committee, Operations, C-Level
-    "investidores": "Investidores", # Shareholders, Board of Directors, Lenders
-}
-
-# Explanatory subtitles shown beneath the perspective selector in the sidebar
-PERSPECTIVE_SUMMARIES = {
-    "tecnica": "Liquidez, endividamento e os controles que sustentam a operação.",
-    "gestao": "Receita, margem e os riscos que exigem decisão no próximo ciclo.",
-    "investidores": "Retorno, criação de valor e a dispersão entre cenários.",
-}
-
-# Defines which metrics are available in the distribution dropdown for each perspective
-PERSPECTIVE_METRICS = {
-    "tecnica": [
-        "liquidez_corrente",
-        "liquidez_seca",
-        "liquidez_imediata",
-        "liquidez_geral",
-        "participacao_capital_terceiros",
-        "composicao_endividamento",
-        "imobilizacao_pl",
-    ],
-    "gestao": ["margem_ebitda", "liquidez_corrente", "roa", "eva"],
-    "investidores": ["margem_ebitda", "roa", "roe", "eva"],
-}
 
 # ==============================================================================
 # DASH APPLICATION INITIALIZATION
@@ -439,23 +378,7 @@ def render_content(
     # 2. ASSEMBLE KPI TILES (CARDS)
     # --------------------------------------------------------------------------
     # Operational overview tiles (Revenue, EBITDA, Net Result, Cash Gen, Debt)
-    tiles1 = [
-        card("Receita", money(latest.receita.median()), delta("receita")),
-        card("EBITDA", money(latest.ebitda.median()), delta("ebitda")),
-        card(
-            "Resultado líquido",
-            money(latest.resultado_liquido.median()),
-            delta("resultado_liquido"),
-        ),
-        card(
-            "Geração de caixa",
-            money(latest.geracao_caixa.median()),
-            delta("geracao_caixa"),
-        ),
-        card(
-            "Dívida total", money(latest.divida_total.median()), delta("divida_total")
-        ),
-    ]
+    tiles1 = build_operational_overview_tiles(latest, prev)
 
     # Technical controls & liquidity tiles (Margins, ROA, ROE, Current & General Liquidity)
     tiles2 = [
