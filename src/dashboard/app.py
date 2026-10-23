@@ -101,6 +101,10 @@ from hero_radial import radial_figure
 from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_SUMMARIES, PERSPECTIVE_METRICS
 from metrics_kpi.operational_overview import build_operational_overview_tiles
 from metrics_kpi.technical_control import build_technical_controls_tiles
+from metrics_kpi.yearly_aggregates import compute_yearly_medians
+from metrics_kpi.charts import create_trend_chart
+
+
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
 # ==============================================================================
@@ -381,40 +385,14 @@ def render_content(
     # Operational overview tiles (Revenue, EBITDA, Net Result, Cash Gen, Debt)
     tiles1 = build_operational_overview_tiles(latest, prev)
     tiles2 = build_technical_controls_tiles(latest, prev)
-    
+
     # --------------------------------------------------------------------------
     # 3. COMPUTE YEARLY MEDIANS FOR TIME-SERIES VISUALIZATIONS
     # --------------------------------------------------------------------------
-    by_year = operating.groupby(["ano_num", "ano_calendario"], as_index=False).agg(
-        receita=("receita", "median"),
-        ebitda=("ebitda", "median"),
-        margem_ebitda=("margem_ebitda", "median"),
-        roe=("roe", "median"),
-        liquidez_corrente=("liquidez_corrente", "median"),
-        capital_terceiros=("participacao_capital_terceiros", "median"),
-        eva=("eva", "median"),
-        geracao_caixa=("geracao_caixa", "median"),
-    )
+    by_year = compute_yearly_medians(operating)
 
     # REVENUE & EBITDA TREND AREA CHART
-    trend = px.area(
-        by_year,
-        x="ano_calendario",
-        y="receita",
-        title="Receita ao longo da concessão",
-        color_discrete_sequence=[COLORS["teal"]],
-    )
-    trend.add_trace(
-        go.Scatter(
-            x=by_year.ano_calendario,
-            y=by_year.ebitda,
-            mode="lines+markers",
-            name="EBITDA",
-            line={"color": COLORS["amber"], "width": 3},
-            marker={"size": 7},
-        )
-    )
-    trend.update_yaxes(tickprefix="R$ ", tickformat="~s")
+    trend = create_trend_chart(by_year, COLORS)
 
     # --------------------------------------------------------------------------
     # 4. RADIAL PETAL HERO CHART (RELATIVE 0-100 NORMALIZATION)
