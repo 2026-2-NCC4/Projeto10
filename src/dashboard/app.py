@@ -77,7 +77,13 @@ HOW TO MANAGE & EXTEND THIS DASHBOARD
 
 # ==============================================================================
 # IMPORTS & SYSTEM DEPENDENCIES
+import sys, os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # ==============================================================================
+import sys, os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from pathlib import Path
 import unicodedata
 
@@ -98,7 +104,14 @@ from petals import petal
 from data_loader import load_data
 from ui_elements import row, panel, money, percent, ratio, card, insight, section, chart
 from dashboard.metrics_kpi.hero_radial import radial_figure
-from config import FONT_STACK, COLORS, METRIC_LABELS, PERSPECTIVES, PERSPECTIVE_SUMMARIES, PERSPECTIVE_METRICS
+from config import (
+    FONT_STACK,
+    COLORS,
+    METRIC_LABELS,
+    PERSPECTIVES,
+    PERSPECTIVE_SUMMARIES,
+    PERSPECTIVE_METRICS,
+)
 from metrics_kpi.operational_overview import build_operational_overview_tiles
 from metrics_kpi.technical_control import build_technical_controls_tiles
 from metrics_kpi.yearly_aggregates import compute_yearly_medians
@@ -117,12 +130,11 @@ from metrics_kpi.dynamic_insights import compute_dynamic_insights
 from metrics_kpi.balance_metrics import compute_balance_structure
 from metrics_kpi.terminal_liquidation import build_terminal_liquidation_section
 
-#Perspectives views
+# Perspectives views
 from perspectives.technical import render_technical_view
 from perspectives.investors import render_investor_view
 from perspectives.management import render_management_view
 from perspectives.dashboard_layout import create_main_layout
-
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
@@ -159,12 +171,15 @@ app = Dash(
     __name__,
     title="NOUR | Painel financeiro",
     assets_folder=str(Path(__file__).parent),  # Loads style.css from dashboard folder
-    suppress_callback_exceptions=True,        # Permits dynamic component IDs across tabs
+    suppress_callback_exceptions=True,  # Permits dynamic component IDs across tabs
 )
 
 server = app.server
 
-app.layout = create_main_layout(YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS)
+app.layout = create_main_layout(
+    YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS
+)
+
 
 # ==============================================================================
 # CORE DYNAMIC RENDERING ENGINE
@@ -234,7 +249,7 @@ def render_content(
     # 5. MONTE CARLO RISK ANALYSIS MATRIX
     # -------------------------------------------------------------------------
     # 1. Processa os dados de risco
-    risk_long, risk_labels = compute_risk_probabilities(operating)
+    risk_long, risk_labels, _ = compute_risk_probabilities(operating)
     # 2. Gera o gráfico de risco
     risk_fig = create_risk_chart(risk_long, risk_labels)
     # --------------------------------------------------------------------------
@@ -243,8 +258,10 @@ def render_content(
     risk_long, risk_labels, risk = compute_risk_probabilities(operating)
     # Management Perspective Insights
     # Gera todos os blocos de insights dinâmicos baseados no contexto atual
-    management_insights, technical_insights, investor_insights = compute_dynamic_insights(
-        latest, prev, risk, latest_year, selected_metric, METRIC_LABELS
+    management_insights, technical_insights, investor_insights = (
+        compute_dynamic_insights(
+            latest, prev, risk, latest_year, selected_metric, METRIC_LABELS
+        )
     )
     # --------------------------------------------------------------------------
     # 7. INVESTOR CHARTS (SCATTER, VALUE CREATION, BALANCE STRUCTURE)
@@ -265,7 +282,9 @@ def render_content(
     # 9. SCENARIO DISTRIBUTION BOXPLOT
     # --------------------------------------------------------------------------
     # Gera o gráfico de distribuição dos cenários
-    distribution = create_distribution_chart(operating, selected_metric, METRIC_LABELS, COLORS)
+    distribution = create_distribution_chart(
+        operating, selected_metric, METRIC_LABELS, COLORS
+    )
     # Subtitle formatado com separadores
     subtitle = " · ".join(
         [
@@ -279,18 +298,35 @@ def render_content(
     # 10. PERSPECTIVE VIEW ROUTING
     # --------------------------------------------------------------------------
     if perspective == "tecnica":
-        return render_technical_view(index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution)
+        return render_technical_view(
+            index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution
+        )
 
     if perspective == "investidores":
         return render_investor_view(
-            index_fig, subtitle, latest, delta, investor_insights, 
-            scatter, value_fig, balance_fig, terminal_children, distribution
+            index_fig,
+            subtitle,
+            latest,
+            delta,
+            investor_insights,
+            scatter,
+            value_fig,
+            balance_fig,
+            terminal_children,
+            distribution,
         )
 
     # Default: Management / Executive
     return render_management_view(
-        index_fig, subtitle, tiles1, management_insights, 
-        trend, value_fig, risk_fig, terminal_children, distribution
+        index_fig,
+        subtitle,
+        tiles1,
+        management_insights,
+        trend,
+        value_fig,
+        risk_fig,
+        terminal_children,
+        distribution,
     )
 
 
