@@ -1,10 +1,9 @@
+# Evaluates binary adverse conditions across all simulated scenarios per year:
+# - Net Loss (Resultado Líquido < 0)
+# - Negative Cash (Saldo Final de Caixa < 0)
+# - Critical Liquidity (Liquidez Corrente < 1.0x)
+# - Value Destruction (EVA < 0)
 
-
-    # Evaluates binary adverse conditions across all simulated scenarios per year:
-    # - Net Loss (Resultado Líquido < 0)
-    # - Negative Cash (Saldo Final de Caixa < 0)
-    # - Critical Liquidity (Liquidez Corrente < 1.0x)
-    # - Value Destruction (EVA < 0)
 
 def compute_risk_probabilities(operating):
     """Calcula as probabilidades anuais de eventos adversos baseados nas simulações."""

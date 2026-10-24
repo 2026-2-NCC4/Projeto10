@@ -1,8 +1,9 @@
 from ui_elements import card, percent, ratio
 
+
 def build_technical_controls_tiles(latest, prev):
     """Calcula e monta os cartões de controles técnicos e liquidez (tiles2)."""
-    
+
     def delta(metric):
         if prev.empty or metric not in latest.columns or metric not in prev.columns:
             return None
@@ -19,5 +20,5 @@ def build_technical_controls_tiles(latest, prev):
         card("Liquidez corrente", ratio(latest.liquidez_corrente.median())),
         card("Liquidez geral", ratio(latest.liquidez_geral.median())),
     ]
-    
+
     return tiles2

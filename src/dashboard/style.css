@@ -1,8 +1,9 @@
-/* NOUR — financial dashboard.
-   Chrome is greyscale on purpose: plum and sky are reserved for data, so any
-   colour on screen is a value, never decoration. */
+/*
+   1. Design Tokens & Global Defaults
+*/
 
 :root {
+  /* Colour palette */
   --ink: #111111;
   --ink-weak: #5b5b5b;
   --line: #e4e4e4;
@@ -12,9 +13,12 @@
   --plum: #501839;
   --sky: #55a9e8;
   --sky-weak: #c5e6ff;
+
+  /* Layout */
   --sidebar-width: 340px;
   --radius: 6px;
 
+  /* Typography and browser defaults */
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
@@ -27,9 +31,13 @@
   scrollbar-color: var(--line-strong) transparent;
 }
 
+/* Global box sizing */
+
 * {
   box-sizing: border-box;
 }
+
+/* Document defaults */
 
 body {
   margin: 0;
@@ -38,10 +46,14 @@ body {
   line-height: 1.15;
 }
 
+/* Text selection */
+
 ::selection {
   background: var(--plum);
   color: #ffffff;
 }
+
+/* Scrollbars */
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -58,12 +70,16 @@ body {
   background: transparent;
 }
 
+/* Keyboard focus */
+
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
-/* ---------- Shell ---------- */
+/*
+   2. Application Layout
+*/
 
 .main {
   margin-right: var(--sidebar-width);
@@ -75,37 +91,42 @@ body {
   max-width: 1320px;
 }
 
-.hero-graph {
-  min-height: 500px;
+.page-content {
+  padding: 24px !important;
 }
 
-/* A re-render takes a couple of seconds. Dash flags the node while the
-   callback is in flight; recede the stale view so the click registers. */
-/* Loading overlay with three animated dots */
-.content[data-dash-is-loading="true"] {
-  overflow: hidden; /* prevent scroll while loading */
-  /* hide direct child elements while keeping ::after visible */
-  > * {
-    visibility: hidden;
-  }
+/*
+   3. Loading State
+*/
 
-  /* keep dot animation visible */
-  pointer-events: none;
+/*
+   Dash marks the content node while a callback is in flight. Hide stale
+   content and display a centered animated indicator until the update finishes.
+*/
+
+.content[data-dash-is-loading="true"] {
   position: relative;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.content[data-dash-is-loading="true"] > * {
+  visibility: hidden;
 }
 
 .content[data-dash-is-loading="true"]::after {
   content: "...";
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
+  z-index: 9999;
   transform: translate(-50%, -50%);
-  font-size: 4rem;
+  padding-right: var(--sidebar-width);
+  font-size: 2rem;
   letter-spacing: 0.2rem;
   color: var(--ink);
   animation: dotPulse 1.2s steps(4, end) infinite;
   opacity: 0.4;
-  transition: opacity 150ms ease-out;
   pointer-events: none;
 }
 
@@ -131,14 +152,16 @@ body {
   }
 }
 
-/* ---------- Hero ---------- */
+/*
+   4. Hero
+*/
 
 .hero {
   position: relative;
-  background: var(--sky);
-  overflow: hidden;
   min-height: 100svh;
   padding: 28px 24px 24px;
+  overflow: hidden;
+  background: var(--sky);
 }
 
 .hero-copy {
@@ -156,7 +179,8 @@ body {
   letter-spacing: -0.03em;
 }
 
-/* Full plum, no opacity: tinting it down drops under 4.5:1 on the sky panel. */
+/* Keep full plum for sufficient contrast against the sky background. */
+
 .hero-copy p {
   margin: 12px 0 0;
   font-size: 0.875rem;
@@ -164,24 +188,43 @@ body {
   color: var(--plum);
 }
 
-/* Height lives in the Graph's inline `style` prop; see app.py. */
+/* Chart height is controlled by the Graph's inline style in app.py. */
+
 .hero > .hero-chart {
   min-width: 0;
   height: 95svh;
 }
 
-/* ---------- Sections ---------- */
+.hero-figure {
+  background: var(--sky);
+}
+
+.hero-title {
+  max-width: 450px;
+  margin: 0;
+  padding: 24px !important;
+  font-size: 1.6rem;
+}
+
+.hero-graph {
+  min-height: 500px;
+}
+
+/*
+   5. Dashboard Sections
+*/
 
 .section {
+  display: flex;
   padding-top: 48px;
   margin-top: 48px;
   border-top: 1px solid var(--line);
 }
 
 .section:first-child {
-  border-top: none;
   padding-top: 0;
   margin-top: 56px;
+  border-top: none;
 }
 
 .section h2 {
@@ -193,12 +236,14 @@ body {
 }
 
 .section-subtitle {
-  margin: 0 0 28px;
   max-width: 68ch;
+  margin: 0 0 28px;
   color: var(--ink-weak);
 }
 
-/* ---------- Metrics ---------- */
+/*
+   6. Metrics
+*/
 
 .metrics-grid {
   display: grid;
@@ -207,8 +252,8 @@ body {
 }
 
 .metric-card {
-  background: var(--sky-weak);
   padding: 18px 20px 20px;
+  background: var(--sky-weak);
   border-radius: 5px;
 }
 
@@ -234,7 +279,9 @@ body {
   color: var(--ink);
 }
 
-/* ---------- Insights ---------- */
+/*
+   7. Insights
+*/
 
 .insights-grid {
   display: grid;
@@ -267,7 +314,9 @@ body {
   border-color: var(--sky);
 }
 
-/* ---------- Charts ---------- */
+/*
+   8. Charts
+*/
 
 .chart-grid {
   display: flex;
@@ -280,12 +329,16 @@ body {
   min-width: 0;
 }
 
+/* Plotly chart title */
+
 .gtitle {
   font-weight: 600 !important;
   fill: var(--ink) !important;
 }
 
-/* ---------- Sidebar ---------- */
+/*
+   9. Sidebar
+*/
 
 .sidebar {
   position: fixed;
@@ -297,7 +350,7 @@ body {
   background: #ffffff;
   border-left: 1px solid var(--line);
 
-  /* Dash 4 themes its own controls from these. */
+  /* Dash 4 theme tokens for sidebar controls. */
   --Dash-Text-Primary: var(--ink);
   --Dash-Text-Strong: var(--ink);
   --Dash-Text-Weak: var(--ink-weak);
@@ -315,6 +368,8 @@ body {
   --tabs-primary: var(--ink);
 }
 
+/* Brand */
+
 .brand-lockup {
   padding: 28px 24px 24px;
   border-bottom: 1px solid var(--line);
@@ -331,7 +386,9 @@ body {
   color: var(--ink-weak);
 }
 
-/* ---------- Sidebar panels ---------- */
+/*
+   10. Sidebar Panels
+*/
 
 .panel {
   border-bottom: 1px solid var(--line);
@@ -357,7 +414,8 @@ body {
   background: #fafafa;
 }
 
-/* Chevron, drawn rather than typed. */
+/* Chevron indicator */
+
 .panel > summary::after {
   content: "";
   width: 8px;
@@ -372,20 +430,15 @@ body {
   transform: translateY(2px) rotate(225deg);
 }
 
+/* Panel content */
+
 .panel-body {
-  padding: 0 24px 20px;
   height: fit-content;
+  padding: 0 24px 20px;
 }
 
 .panel[open] > .panel-body {
   animation: panel-reveal 180ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes panel-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
 }
 
 .panel-note {
@@ -395,7 +448,16 @@ body {
   color: var(--ink-weak);
 }
 
-/* ---------- Control rows ---------- */
+@keyframes panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/*
+   11. Control Rows
+*/
 
 .row {
   display: grid;
@@ -436,26 +498,25 @@ body {
   color: var(--ink);
 }
 
-/* ---------- Segmented control (dcc.Tabs) ---------- */
+/*
+   12. Segmented Controls & Tabs
+*/
+
+/* Dash dcc.Tabs wrappers */
 
 .segmented-parent {
   overflow: visible;
 }
 
-.hero-figure {
-  background: var(--sky);
+.segmented .tab-container,
+.segmented.tab-container {
+  flex-direction: row;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius);
 }
 
-.hero-title {
-  margin: 0;
-  padding: 24px !important;
-  max-width: 450px;
-  font-size: 1.6rem;
-}
-
-.page-content {
-  padding: 24px !important;
-}
+/* Individual tabs */
 
 .tab {
   border: 1px solid var(--line) !important;
@@ -466,13 +527,7 @@ body {
   border-top: 1px solid var(--ink) !important;
 }
 
-.segmented .tab-container,
-.segmented.tab-container {
-  flex-direction: row;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--radius);
-}
+/* Custom segmented controls */
 
 .segment {
   flex: 1 1 0;
@@ -500,11 +555,15 @@ body {
   color: #ffffff;
 }
 
+/* Content visibility controlled by the tab implementation */
+
 .segmented-content {
   display: none;
 }
 
-/* ---------- Sliders ---------- */
+/*
+   13. Sliders
+*/
 
 .rc-slider {
   padding: 8px 0;
@@ -551,13 +610,15 @@ body {
   border-bottom-color: var(--ink) !important;
 }
 
-/* ---------- Source list ---------- */
+/*
+   14. Metadata & Source List
+*/
 
 .meta-list {
-  margin: 0;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 6px 16px;
+  margin: 0;
   font-size: 0.8125rem;
 }
 
@@ -570,7 +631,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Notices ---------- */
+/*
+   15. Notices & Empty States
+*/
 
 .notice,
 .empty-state {
@@ -585,29 +648,9 @@ body {
   margin: 24px;
 }
 
-/* Hide direct children while keeping loading dots */
-.content[data-dash-is-loading="true"] > * {
-  visibility: hidden;
-}
-
-/* Ensure loading dots stay on top */
-.content[data-dash-is-loading="true"]::after {
-  content: "...";
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding-right: var(--sidebar-width);
-  font-size: 2rem;
-  letter-spacing: 0.2rem;
-  color: var(--ink);
-  animation: dotPulse 1.2s steps(4, end) infinite;
-  opacity: 0.4;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* ---------- Responsive ---------- */
+/*
+   16. Responsive Layout
+*/
 
 @media (max-width: 1100px) {
   :root {
@@ -639,14 +682,14 @@ body {
     position: static;
     width: 100%;
     height: auto;
-    border-left: none;
     border-top: 1px solid var(--line);
+    border-left: none;
   }
 
   .hero-copy {
     position: static;
-    padding: 32px 24px 0;
     max-width: none;
+    padding: 32px 24px 0;
   }
 
   .hero-copy h1 {
@@ -657,6 +700,10 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/*
+   17. Accessibility & Reduced Motion
+*/
 
 @media (prefers-reduced-motion: reduce) {
   *,

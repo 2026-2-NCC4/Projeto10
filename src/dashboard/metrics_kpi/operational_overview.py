@@ -1,8 +1,9 @@
 from ui_elements import card, money
 
+
 def build_operational_overview_tiles(latest, prev):
     """Calcula as variações e monta os cartões operacionais (tiles1) da visão geral."""
-    
+
     def delta(metric):
         if prev.empty or metric not in latest.columns or metric not in prev.columns:
             return None
@@ -25,5 +26,5 @@ def build_operational_overview_tiles(latest, prev):
             "Dívida total", money(latest.divida_total.median()), delta("divida_total")
         ),
     ]
-    
+
     return tiles1

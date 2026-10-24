@@ -1,11 +1,31 @@
 from dash import html
 from ui_elements import page, section, card, chart, money, percent
 
-def render_investor_view(index_fig, subtitle, latest, delta, investor_insights, scatter, value_fig, balance_fig, terminal_children, distribution):
+
+def render_investor_view(
+    index_fig,
+    subtitle,
+    latest,
+    delta,
+    investor_insights,
+    scatter,
+    value_fig,
+    balance_fig,
+    terminal_children,
+    distribution,
+):
     investor_tiles = [
         card("EBITDA", money(latest.ebitda.median()), delta("ebitda")),
-        card("Resultado líquido", money(latest.resultado_liquido.median()), delta("resultado_liquido")),
-        card("Geração de caixa", money(latest.geracao_caixa.median()), delta("geracao_caixa")),
+        card(
+            "Resultado líquido",
+            money(latest.resultado_liquido.median()),
+            delta("resultado_liquido"),
+        ),
+        card(
+            "Geração de caixa",
+            money(latest.geracao_caixa.median()),
+            delta("geracao_caixa"),
+        ),
         card("ROE", percent(latest.roe.median()), delta("roe")),
         card("EVA", money(latest.eva.median()), delta("eva")),
     ]

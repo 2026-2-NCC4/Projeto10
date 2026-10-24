@@ -3,6 +3,7 @@ from pathlib import Path
 import unicodedata
 import pandas as pd
 
+
 def load_data(path: Path) -> pd.DataFrame:
     """Load, cleanse, pivot, and calculate financial indicators from raw CSV ledger.
 
@@ -79,19 +80,21 @@ def load_data(path: Path) -> pd.DataFrame:
     # 1. EXTRACT RAW BASE ACCOUNTS (BALANÇO & DRE)
     # --------------------------------------------------------------------------
     receita, ac, pc = (
-        col("DRE Receita"),               # Gross Revenue
-        col("BAL Ativo Circulante"),      # Current Assets (short-term)
-        col("BAL Passivo Circulante"),    # Current Liabilities (short-term)
+        col("DRE Receita"),  # Gross Revenue
+        col("BAL Ativo Circulante"),  # Current Assets (short-term)
+        col("BAL Passivo Circulante"),  # Current Liabilities (short-term)
     )
     pl, ativo, caixa = (
-        col("BAL Patrimônio Líquido"),    # Shareholders' Equity
-        col("BAL Total do Ativo"),        # Total Assets
-        col("BAL Disponível"),            # Cash and Cash Equivalents
+        col("BAL Patrimônio Líquido"),  # Shareholders' Equity
+        col("BAL Total do Ativo"),  # Total Assets
+        col("BAL Disponível"),  # Cash and Cash Equivalents
     )
     estoque, rlp, permanente = (
-        col("BAL Estoques Diversos"),            # Inventory
-        col("BAL Realizável a Longo Prazo"),     # Long-Term Receivables / Non-current Assets
-        col("BAL Permanente"),                   # Fixed / Permanent Assets (PPE)
+        col("BAL Estoques Diversos"),  # Inventory
+        col(
+            "BAL Realizável a Longo Prazo"
+        ),  # Long-Term Receivables / Non-current Assets
+        col("BAL Permanente"),  # Fixed / Permanent Assets (PPE)
     )
 
     # Total Debt Calculation: Current Liabilities + Other Debts + Loans + Contingency Provisions
@@ -112,7 +115,7 @@ def load_data(path: Path) -> pd.DataFrame:
     wide["custos_variaveis"] = col("DRE Custos").abs()
     wide["ebitda"] = col("DRE EBITDA")
     wide["resultado_operacional"] = col("DRE Resultado Operacional")  # EBIT
-    wide["resultado_liquido"] = col("DRE Resultado Líquido")          # Net Profit/Loss
+    wide["resultado_liquido"] = col("DRE Resultado Líquido")  # Net Profit/Loss
 
     # Margins: operational efficiency relative to gross revenue
     wide["margem_ebitda"] = wide.ebitda.div(receita)
@@ -161,11 +164,13 @@ def load_data(path: Path) -> pd.DataFrame:
     # --------------------------------------------------------------------------
     # 6. CASH FLOW STATEMENT (FLU)
     # --------------------------------------------------------------------------
-    wide["geracao_caixa"] = col("FLU Geração de Caixa")                  # Operating Cash Flow
-    wide["investimentos"] = col("FLU Investimentos")                      # Capex / Investments
-    wide["distribuicao_acionista"] = col("FLU Distribuição para Acionista") # Dividends / Equity returns
-    wide["saldo_inicial_caixa"] = col("FLU Saldo Inicial")                # Beginning cash balance
-    wide["saldo_final_caixa"] = col("FLU Saldo Final")                    # Ending cash balance
+    wide["geracao_caixa"] = col("FLU Geração de Caixa")  # Operating Cash Flow
+    wide["investimentos"] = col("FLU Investimentos")  # Capex / Investments
+    wide["distribuicao_acionista"] = col(
+        "FLU Distribuição para Acionista"
+    )  # Dividends / Equity returns
+    wide["saldo_inicial_caixa"] = col("FLU Saldo Inicial")  # Beginning cash balance
+    wide["saldo_final_caixa"] = col("FLU Saldo Final")  # Ending cash balance
 
     # --------------------------------------------------------------------------
     # 7. ECONOMIC VALUE ADDED (EVA)

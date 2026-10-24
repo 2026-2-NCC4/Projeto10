@@ -225,6 +225,7 @@ def demo():
     - Safety clamping (absurdly large corner radius does not invert or break geometry).
     - Degenerate handling (handles zero-thickness petals without runtime exceptions).
     """
+
     # A corner fillet is a chord across the ring, so it dips a tiny fraction of a
     # percent inside `inner`. Tolerate that small tolerance; anything larger is an escape.
     def within(radius, inner, outer):

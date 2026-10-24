@@ -7,7 +7,9 @@ from config import FONT_STACK, COLORS
 # ==============================================================================
 # Sizing parameters for the central hole and spacing between individual metric petals
 HOLE = 0.34
-PETAL_GAP = 0.30  # Fraction of angular slice left empty so petals appear as distinct shapes
+PETAL_GAP = (
+    0.30  # Fraction of angular slice left empty so petals appear as distinct shapes
+)
 
 
 def radial_figure(scored_labels):

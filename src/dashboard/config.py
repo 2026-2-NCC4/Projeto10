@@ -1,5 +1,3 @@
-
-
 # ==============================================================================
 # DESIGN SYSTEM TOKENS (TYPOGRAPHY & PALETTE)
 # ==============================================================================
@@ -38,9 +36,9 @@ METRIC_LABELS = {
 
 # The three executive perspectives tailored for different stakeholder groups
 PERSPECTIVES = {
-    "tecnica": "Técnica",           # Controllership, Treasury, Risk & Compliance
-    "gestao": "Gestão",             # Executive Committee, Operations, C-Level
-    "investidores": "Investidores", # Shareholders, Board of Directors, Lenders
+    "tecnica": "Técnica",  # Controllership, Treasury, Risk & Compliance
+    "gestao": "Gestão",  # Executive Committee, Operations, C-Level
+    "investidores": "Investidores",  # Shareholders, Board of Directors, Lenders
 }
 
 # Explanatory subtitles shown beneath the perspective selector in the sidebar

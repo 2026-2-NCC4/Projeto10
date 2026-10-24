@@ -1,6 +1,7 @@
 # src/dashboard/metrics_kpis/balance_metrics.py
 import pandas as pd
 
+
 def compute_balance_structure(latest):
     """Prepara o DataFrame para o gráfico de barras da estrutura financeira."""
     if latest.empty:

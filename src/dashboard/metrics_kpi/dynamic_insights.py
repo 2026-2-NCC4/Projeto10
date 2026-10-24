@@ -2,9 +2,12 @@
 import pandas as pd
 from ui_elements import insight, money, percent, ratio
 
-def compute_dynamic_insights(latest, prev, risk, latest_year, selected_metric, metric_labels):
+
+def compute_dynamic_insights(
+    latest, prev, risk, latest_year, selected_metric, metric_labels
+):
     """Calcula e monta os insights dinâmicos baseados em limiares para gestores, técnicos e investidores."""
-    
+
     # Tratamento de deltas auxiliares locais
     def delta(metric):
         if prev.empty or metric not in latest.columns or metric not in prev.columns:
@@ -14,7 +17,7 @@ def compute_dynamic_insights(latest, prev, risk, latest_year, selected_metric, m
     # Filtro de risco para o ano mais recente
     target_year = 2026 + latest_year
     risk_filtered = risk.loc[risk["ano_calendario"].eq(target_year)]
-    
+
     if not risk_filtered.empty:
         latest_risk = risk_filtered.iloc[0]
         cash_risk = latest_risk.get("caixa_negativo", 0.0)
@@ -25,10 +28,16 @@ def compute_dynamic_insights(latest, prev, risk, latest_year, selected_metric, m
 
     revenue_change = delta("receita")
     margin_change = delta("margem_ebitda")
-    
+
     # Quartis/Percentis da métrica selecionada
-    selected_values = latest[selected_metric].dropna() if not latest.empty and selected_metric in latest.columns else pd.Series([0])
-    p10, p90 = selected_values.quantile([0.10, 0.90]) if not selected_values.empty else (0, 0)
+    selected_values = (
+        latest[selected_metric].dropna()
+        if not latest.empty and selected_metric in latest.columns
+        else pd.Series([0])
+    )
+    p10, p90 = (
+        selected_values.quantile([0.10, 0.90]) if not selected_values.empty else (0, 0)
+    )
 
     # 1. Management Perspective Insights
     management_insights = [
@@ -59,8 +68,11 @@ def compute_dynamic_insights(latest, prev, risk, latest_year, selected_metric, m
 
     # 2. Technical / Controllership Insights
     metric_label_name = metric_labels.get(selected_metric, "Indicador").lower()
-    is_percent_metric = selected_metric in {'participacao_capital_terceiros', 'composicao_endividamento'}
-    
+    is_percent_metric = selected_metric in {
+        "participacao_capital_terceiros",
+        "composicao_endividamento",
+    }
+
     technical_insights = [
         insight(
             "Cobertura de curto prazo",
@@ -82,7 +94,7 @@ def compute_dynamic_insights(latest, prev, risk, latest_year, selected_metric, m
     ]
 
     # 3. Investor / Shareholder Insights
-    is_investor_percent = selected_metric in {'margem_ebitda', 'roa', 'roe'}
+    is_investor_percent = selected_metric in {"margem_ebitda", "roa", "roe"}
     investor_insights = [
         insight(
             "Criação de valor",

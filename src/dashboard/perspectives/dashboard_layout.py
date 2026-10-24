@@ -2,11 +2,14 @@
 from dash import html, dcc
 from ui_elements import row, panel
 
-def create_main_layout(years, scenarios, perspectives, perspective_metrics, metric_labels):
+
+def create_main_layout(
+    years, scenarios, perspectives, perspective_metrics, metric_labels
+):
     """Constrói a árvore DOM completa do layout principal do painel (Sidebar e Main)."""
     min_y, max_y = min(years), max(years)
     n_scenarios = len(scenarios)
-    
+
     return html.Div(
         className="dashboard",
         children=[
@@ -23,7 +26,10 @@ def create_main_layout(years, scenarios, perspectives, perspective_metrics, metr
                     html.Div(
                         [
                             html.Div("NOUR", className="brand"),
-                            html.Div("CTI Global | Concessão 2027–2038", className="brand-caption"),
+                            html.Div(
+                                "CTI Global | Concessão 2027–2038",
+                                className="brand-caption",
+                            ),
                         ],
                         className="brand-lockup",
                     ),
@@ -69,7 +75,11 @@ def create_main_layout(years, scenarios, perspectives, perspective_metrics, metr
                                     marks=None,
                                     tooltip={"placement": "bottom"},
                                 ),
-                                html.Output(f"{min_y}–{max_y}", id="years-readout", className="readout"),
+                                html.Output(
+                                    f"{min_y}–{max_y}",
+                                    id="years-readout",
+                                    className="readout",
+                                ),
                             ),
                             row(
                                 "Cenários simulados",
@@ -82,7 +92,11 @@ def create_main_layout(years, scenarios, perspectives, perspective_metrics, metr
                                     marks=None,
                                     tooltip={"placement": "bottom"},
                                 ),
-                                html.Output(f"{n_scenarios:,}".replace(",", "."), id="scenarios-readout", className="readout"),
+                                html.Output(
+                                    f"{n_scenarios:,}".replace(",", "."),
+                                    id="scenarios-readout",
+                                    className="readout",
+                                ),
                             ),
                         ],
                     ),
@@ -115,7 +129,9 @@ def create_main_layout(years, scenarios, perspectives, perspective_metrics, metr
                                     html.Dt("Atualização"),
                                     html.Dd("Leitura direta do arquivo local"),
                                     html.Dt("Cobertura"),
-                                    html.Dd(f"{n_scenarios} cenários · {max_y - min_y + 1} anos"),
+                                    html.Dd(
+                                        f"{n_scenarios} cenários · {max_y - min_y + 1} anos"
+                                    ),
                                 ],
                                 className="meta-list",
                             )

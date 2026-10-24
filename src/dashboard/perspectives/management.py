@@ -1,7 +1,18 @@
 from dash import html
 from ui_elements import page, section, chart
 
-def render_management_view(index_fig, subtitle, tiles1, management_insights, trend, value_fig, risk_fig, terminal_children, distribution):
+
+def render_management_view(
+    index_fig,
+    subtitle,
+    tiles1,
+    management_insights,
+    trend,
+    value_fig,
+    risk_fig,
+    terminal_children,
+    distribution,
+):
     return page(
         index_fig,
         subtitle,

@@ -1,6 +1,7 @@
 import plotly.express as px
 import plotly.graph_objects as go
 
+
 def create_trend_chart(by_year, colors):
     """Cria o gráfico de área de Receita com a linha de EBITDA sobreposta."""
     trend = px.area(
@@ -22,6 +23,7 @@ def create_trend_chart(by_year, colors):
     )
     trend.update_yaxes(tickprefix="R$ ", tickformat="~s")
     return trend
+
 
 def create_risk_chart(risk_long, risk_labels):
     """Cria o gráfico de área empilhada/probabilidade do mapa de risco."""
@@ -63,6 +65,7 @@ def create_investor_scatter_chart(latest, latest_year, colors):
     scatter.update_xaxes(tickformat=".0%")
     return scatter
 
+
 def create_value_cash_chart(by_year, colors):
     """Cria o gráfico de linha comparando EVA e Geração de Caixa ao longo do tempo."""
     value_fig = px.line(
@@ -86,6 +89,7 @@ def create_value_cash_chart(by_year, colors):
     )
     value_fig.update_yaxes(tickprefix="R$ ", tickformat="~s")
     return value_fig
+
 
 def create_balance_chart(balance, latest_year):
     """Cria o gráfico de barras da estrutura financeira."""
@@ -121,5 +125,5 @@ def create_distribution_chart(operating, selected_metric, metric_labels, colors)
     )
     if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
         distribution.update_yaxes(tickformat=".0%")
-        
+
     return distribution

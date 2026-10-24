@@ -1,7 +1,10 @@
 from dash import html
 from ui_elements import page, section, chart
 
-def render_technical_view(index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution):
+
+def render_technical_view(
+    index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution
+):
     return page(
         index_fig,
         subtitle,

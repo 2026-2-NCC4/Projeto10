@@ -1,4 +1,3 @@
-
 def compute_yearly_medians(operating):
     """Calcula as medianas anuais detalhadas para as métricas da concessão."""
     if operating.empty:

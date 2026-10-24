@@ -2,6 +2,7 @@
 from dash import html
 from ui_elements import card, money, section
 
+
 def build_terminal_liquidation_section(filtered):
     """Calcula os dados de encerramento da concessão e monta a seção de liquidação terminal."""
     terminal = filtered[filtered.encerramento] if not filtered.empty else filtered
