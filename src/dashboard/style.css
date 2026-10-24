@@ -15,8 +15,9 @@
   --sidebar-width: 340px;
   --radius: 6px;
 
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   font-size: 16px;
   color: var(--ink);
   background: #ffffff;
@@ -34,7 +35,7 @@ body {
   margin: 0;
   background: #ffffff;
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.15;
 }
 
 ::selection {
@@ -74,12 +75,60 @@ body {
   max-width: 1320px;
 }
 
+.hero-graph {
+  min-height: 500px;
+}
+
 /* A re-render takes a couple of seconds. Dash flags the node while the
    callback is in flight; recede the stale view so the click registers. */
+/* Loading overlay with three animated dots */
 .content[data-dash-is-loading="true"] {
+  overflow: hidden; /* prevent scroll while loading */
+  /* hide direct child elements while keeping ::after visible */
+  > * {
+    visibility: hidden;
+  }
+
+  /* keep dot animation visible */
+  pointer-events: none;
+  position: relative;
+}
+
+.content[data-dash-is-loading="true"]::after {
+  content: "...";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  letter-spacing: 0.2rem;
+  color: var(--ink);
+  animation: dotPulse 1.2s steps(4, end) infinite;
   opacity: 0.4;
   transition: opacity 150ms ease-out;
   pointer-events: none;
+}
+
+@keyframes dotPulse {
+  0% {
+    opacity: 0.2;
+  }
+
+  25% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  75% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ---------- Hero ---------- */
@@ -153,21 +202,20 @@ body {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--ink);
-  border: 1px solid var(--ink);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .metric-card {
   background: var(--sky-weak);
   padding: 18px 20px 20px;
+  border-radius: 5px;
 }
 
 .metric-label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--ink-weak);
+  color: var(--ink);
 }
 
 .metric-value {
@@ -183,7 +231,7 @@ body {
   margin-top: 6px;
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-weak);
+  color: var(--ink);
 }
 
 /* ---------- Insights ---------- */
@@ -191,12 +239,13 @@ body {
 .insights-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .insight-card {
-  padding: 18px 20px 20px;
-  border: 2px solid var(--line-strong);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
 }
 
 .insight-card h3 {
@@ -215,21 +264,20 @@ body {
 }
 
 .insight-positive {
-  border-top-color: var(--sky);
+  border-color: var(--sky);
 }
 
 /* ---------- Charts ---------- */
 
 .chart-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
 }
 
 .chart-card {
+  display: block;
   min-width: 0;
-  border-top: 1px solid var(--line);
-  padding-top: 8px;
 }
 
 .gtitle {
@@ -326,6 +374,7 @@ body {
 
 .panel-body {
   padding: 0 24px 20px;
+  height: fit-content;
 }
 
 .panel[open] > .panel-body {
@@ -365,7 +414,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 16px;
 }
 
 .row-right:has(.readout) {
@@ -393,6 +442,30 @@ body {
   overflow: visible;
 }
 
+.hero-figure {
+  background: var(--sky);
+}
+
+.hero-title {
+  margin: 0;
+  padding: 24px !important;
+  max-width: 450px;
+  font-size: 1.6rem;
+}
+
+.page-content {
+  padding: 24px !important;
+}
+
+.tab {
+  border: 1px solid var(--line) !important;
+}
+
+.tab--selected {
+  border: 1px solid var(--ink) !important;
+  border-top: 1px solid var(--ink) !important;
+}
+
 .segmented .tab-container,
 .segmented.tab-container {
   flex-direction: row;
@@ -410,7 +483,9 @@ body {
   color: var(--ink-weak);
   font-size: 0.8125rem;
   font-weight: 500;
-  transition: background-color 150ms ease-out, color 150ms ease-out;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
 .segment:hover {
@@ -510,6 +585,28 @@ body {
   margin: 24px;
 }
 
+/* Hide direct children while keeping loading dots */
+.content[data-dash-is-loading="true"] > * {
+  visibility: hidden;
+}
+
+/* Ensure loading dots stay on top */
+.content[data-dash-is-loading="true"]::after {
+  content: "...";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding-right: var(--sidebar-width);
+  font-size: 2rem;
+  letter-spacing: 0.2rem;
+  color: var(--ink);
+  animation: dotPulse 1.2s steps(4, end) infinite;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 9999;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1100px) {
@@ -518,7 +615,7 @@ body {
   }
 
   .metrics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .insights-grid,
@@ -528,7 +625,7 @@ body {
 
   .row {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 16px;
     padding-block: 12px;
   }
 }
