@@ -2,6 +2,7 @@ from dash import html, dcc
 import pandas as pd
 from config import FONT_STACK, COLORS
 
+
 # ==============================================================================
 # REUSABLE UI COMPONENT BUILDERS
 # ==============================================================================
@@ -148,3 +149,83 @@ def chart(figure, class_name="chart-card"):
         className=class_name,
     )
 
+
+# ----------------------------------------------------------------------
+# PAGE LAYOUT HELPER
+# ----------------------------------------------------------------------
+def page(index_fig, subtitle, sections):
+    """Assemble a full dashboard “page".
+
+    Parameters
+    ----------
+    index_fig : plotly.graph_objects.Figure
+        The hero/radial figure to display at the top of the page.
+    subtitle : str
+        Title text displayed above the hero figure (e.g., "Gestão · Ano 11 (2037) · 1.200 cenários · Mediana do Recorte").
+    sections : list[Component]
+        List of section components that make up the page content.
+    """
+    # Hero container: title above the chart, with shared styling
+    hero = html.Div(
+        [
+            html.H2(subtitle, className="hero-title"),
+            chart(index_fig, class_name="hero-graph"),
+        ],
+        className="hero-figure",
+    )
+    return html.Div(
+        [
+            hero,
+            html.Div(sections, className="page-content"),
+        ],
+        className="page",
+    )
+    """Assemble a full dashboard “page".
+
+    Parameters
+    ----------
+    index_fig : plotly.graph_objects.Figure
+        The hero/radial figure to display at the top of the page.
+    subtitle : str
+        Subtitle text displayed under the hero figure.
+    sections : list[Component]
+        List of section components that make up the page content.
+    """
+    # Wrap the Plotly figure in a Graph component with the same styling as other charts
+    hero = chart(index_fig, class_name="hero-figure")
+    return html.Div(
+        [
+            hero,
+            html.H2(subtitle, className="page-subtitle"),
+            html.Div(sections, className="page-content"),
+        ],
+        className="page",
+    )
+    """
+    Assemble a full dashboard “page”.
+
+    Parameters
+    ----------
+    index_fig : dash component
+        The hero/radial figure shown at the top of the page.
+    subtitle : str
+        A short description displayed under the hero figure.
+    sections : list[dash component]
+        The body of the page – typically a list of ``section`` components.
+
+    Returns
+    -------
+    html.Div
+        A container ready to be injected into ``dashboard-content``.
+    """
+    return html.Div(
+        [
+            # Hero / radial KPI figure
+            html.Div(index_fig, className="hero-figure"),
+            # Subtitle text
+            html.H2(subtitle, className="page-subtitle"),
+            # The actual content sections
+            html.Div(sections, className="page-content"),
+        ],
+        className="page",
+    )
