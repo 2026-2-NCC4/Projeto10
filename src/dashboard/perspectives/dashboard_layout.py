@@ -25,7 +25,7 @@ def create_main_layout(
                     # Logótipo e título
                     html.Div(
                         [
-                            html.Div("NOUR", className="brand"),
+                            html.Div("Nour", className="brand"),
                             html.Div(
                                 "CTI Global | Concessão 2027–2038",
                                 className="brand-caption",

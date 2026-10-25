@@ -1,4 +1,4 @@
-"""NOUR Financial Dashboard — Interactive Analytics for CTI Global Concession.
+"""Nour Financial Dashboard — Interactive Analytics for CTI Global Concession.
 
 Implemented with Python, Dash (Plotly), and Pandas.
 Concession Period: 2027–2038 (12 Years, with simulated Monte Carlo scenarios).
@@ -169,7 +169,7 @@ SCENARIOS = sorted(DATA["Cenário"].dropna().unique())
 # ==============================================================================
 app = Dash(
     __name__,
-    title="NOUR | Painel financeiro",
+    title="Nour | Painel financeiro",
     assets_folder=str(Path(__file__).parent),  # Loads style.css from dashboard folder
     suppress_callback_exceptions=True,  # Permits dynamic component IDs across tabs
 )

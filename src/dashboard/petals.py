@@ -10,7 +10,7 @@ In standard Plotly, polar bar charts created with ``go.Barpolar`` only support
 rigid rectangular bars with hard 90-degree corners and have no native property
 such as ``cornerradius``.
 
-To achieve the custom "petal" look in the NOUR Financial Dashboard (app.py):
+To achieve the custom "petal" look in the Nour Financial Dashboard (app.py):
 1. This module computes an explicit polygon perimeter path for each metric petal.
 2. The perimeter is calculated in 2D Cartesian coordinates (x, y) with Bézier fillets.
 3. The points are converted back to polar coordinates (theta in degrees, radius r).

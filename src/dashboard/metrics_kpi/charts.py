@@ -1,6 +1,13 @@
+import re
 import plotly.express as px
 import plotly.graph_objects as go
 
+def pretty_label(col_name: str) -> str:
+    """Convert snake_case column names to Title Case with spaces.
+    Example: "ano_calendario" -> "Ano Calendário".
+    """
+    # Replace underscores with spaces and capitalize each word
+    return " ".join(word.capitalize() for word in col_name.split("_"))
 
 def create_trend_chart(by_year, colors):
     """Cria o gráfico de área de Receita com a linha de EBITDA sobreposta."""
@@ -9,6 +16,7 @@ def create_trend_chart(by_year, colors):
         x="ano_calendario",
         y="receita",
         title="Receita ao longo da concessão",
+        labels={"ano_calendario": "Ano calendário", "receita": "Receita"},
         color_discrete_sequence=[colors["teal"]],
     )
     trend.add_trace(
