@@ -15,6 +15,7 @@
   --sky-weak: #c5e6ff;
 
   /* Layout */
+  --navbar-height: 48px;
   --sidebar-width: 360px;
   --radius: 6px;
 
@@ -79,9 +80,94 @@ body {
    2. Application Layout
 */
 
+.top-navbar,
+.navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--navbar-height);
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 24px;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.nav-links {
+  padding-top: 10px;
+}
+
+.top-navbar .nav-links,
+.navbar .nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  height: 100%;
+}
+
+.top-navbar .nav-tab,
+.navbar .nav-tab,
+.top-navbar .nav-link,
+.navbar .nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  color: var(--ink-weak);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.top-navbar .nav-tab:hover,
+.navbar .nav-tab:hover,
+.top-navbar .nav-link:hover,
+.navbar .nav-link:hover {
+  color: var(--ink);
+}
+
+.top-navbar .nav-tab.active,
+.navbar .nav-tab.active,
+.top-navbar .nav-link.active,
+.navbar .nav-link.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--ink);
+}
+
+/*
+   Empty Placeholder Pages (DRE, DFC)
+*/
+
+.empty-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: calc(100vh - var(--navbar-height));
+  box-sizing: border-box;
+  padding: 40px;
+}
+
+.centered-page-text {
+  font-size: 2.25rem;
+  font-weight: 500;
+  color: var(--ink-weak);
+  text-align: center;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
 .main {
   margin-right: var(--sidebar-width);
-  height: 100vh;
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 .stack {
@@ -353,7 +439,9 @@ body {
 
 .sidebar {
   position: fixed;
-  inset: 0 0 0 auto;
+  top: var(--navbar-height);
+  right: 0;
+  bottom: 0;
   z-index: 10;
   width: var(--sidebar-width);
   overflow-y: auto;

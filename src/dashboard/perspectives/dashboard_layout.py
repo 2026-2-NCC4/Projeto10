@@ -10,7 +10,41 @@ def create_main_layout(
     min_y, max_y = min(years), max(years)
     n_scenarios = len(scenarios)
 
-    return html.Div(
+    navbar = html.Header(
+        id="top-navbar",
+        className="navbar top-navbar",
+        children=[
+            html.Nav(
+                className="nav-links",
+                children=[
+                    dcc.Link(
+                        "Dashboard",
+                        href="/",
+                        id="tab-dashboard",
+                        className="nav-tab nav-link active",
+                        title="Dashboard (Home)",
+                    ),
+                    dcc.Link(
+                        "DRE",
+                        href="/dre",
+                        id="tab-dre",
+                        className="nav-tab nav-link",
+                        title="DRE",
+                    ),
+                    dcc.Link(
+                        "DFC",
+                        href="/dfc",
+                        id="tab-dfc",
+                        className="nav-tab nav-link",
+                        title="DFC",
+                    ),
+                ],
+            )
+        ],
+    )
+
+    dashboard_div = html.Div(
+        id="dashboard-page",
         className="dashboard",
         children=[
             # Área principal onde os gráficos e secções dinâmicas são injetados
@@ -140,5 +174,34 @@ def create_main_layout(
                     ),
                 ],
             ),
+        ],
+    )
+
+    dre_div = html.Div(
+        id="dre-page",
+        className="empty-page-container",
+        style={"display": "none"},
+        children=[
+            html.H1("DRE", className="centered-page-text"),
+        ],
+    )
+
+    dfc_div = html.Div(
+        id="dfc-page",
+        className="empty-page-container",
+        style={"display": "none"},
+        children=[
+            html.H1("DFC", className="centered-page-text"),
+        ],
+    )
+
+    return html.Div(
+        className="app-container",
+        children=[
+            dcc.Location(id="url", refresh=False),
+            navbar,
+            dashboard_div,
+            dre_div,
+            dfc_div,
         ],
     )
