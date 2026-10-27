@@ -42,7 +42,7 @@ body {
   margin: 0;
   background: #ffffff;
   font-size: 0.95rem;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 /* Text selection */
@@ -92,13 +92,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 24px;
+  padding: 0 20px;
   z-index: 100;
   box-sizing: border-box;
 }
 
 .nav-links {
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .top-navbar .nav-links,
@@ -106,7 +106,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 24px;
+  gap: 20px;
   height: 100%;
 }
 
@@ -171,12 +171,12 @@ body {
 }
 
 .stack {
-  padding: 24px;
+  padding: 20px;
   max-width: 1320px;
 }
 
 .page-content {
-  padding: 24px !important;
+  padding: 20px !important;
 }
 
 /*
@@ -243,7 +243,7 @@ body {
 .hero {
   position: relative;
   min-height: 100svh;
-  padding: 28px 24px 24px;
+  padding: 20px;
   overflow: hidden;
   background: var(--sky);
 }
@@ -294,7 +294,7 @@ body {
 .hero-title {
   max-width: 450px;
   margin: 0;
-  padding: 24px !important;
+  padding: 20px !important;
   font-size: 1.6rem;
 }
 
@@ -330,6 +330,7 @@ body {
   max-width: 68ch;
   margin: 0 0 28px;
   color: var(--ink-weak);
+  text-wrap: balance;
 }
 
 /*
@@ -395,6 +396,7 @@ body {
 .insight-card p {
   margin: 0;
   color: var(--ink-weak);
+  text-wrap: balance;
 }
 
 .insight-alert {
@@ -470,7 +472,7 @@ body {
 /* Brand */
 
 .brand-lockup {
-  padding: 28px 24px 24px;
+  padding: 20px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -496,7 +498,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
+  padding: 18px 20px;
   font-weight: 600;
   cursor: pointer;
   list-style: none;
@@ -531,7 +533,7 @@ body {
 
 .panel-body {
   height: fit-content;
-  padding: 0 24px 20px;
+  padding: 0 20px 20px;
 }
 
 .panel[open] > .panel-body {
@@ -540,8 +542,7 @@ body {
 
 .panel-note {
   margin: 14px 0 0;
-  font-size: 0.95rem;
-  line-height: 1.45;
+  font-size: 0.9rem;
   color: var(--ink-weak);
 }
 
@@ -745,7 +746,7 @@ body {
 }
 
 .empty-state {
-  margin: 24px;
+  margin: 20px;
 }
 
 /*
@@ -789,7 +790,7 @@ body {
   .hero-copy {
     position: static;
     max-width: none;
-    padding: 32px 24px 0;
+    padding: 32px 20px 0;
   }
 
   .hero-copy h1 {
