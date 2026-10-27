@@ -176,6 +176,17 @@ app = Dash(
 
 server = app.server
 
+
+@server.route("/dre")
+@server.route("/dre/")
+@server.route("/dfc")
+@server.route("/dfc/")
+@server.route("/dashboard")
+@server.route("/dashboard/")
+def serve_spa(*args, **kwargs):
+    """Support direct URL access and browser refreshes on SPA routes."""
+    return app.index(*args, **kwargs)
+
 app.layout = create_main_layout(
     YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS
 )
@@ -395,13 +406,70 @@ def render(years, scenarios, selected_metric, perspective):
         ]
 
 
+@app.callback(
+    Output("dashboard-page", "style"),
+    Output("dre-page", "style"),
+    Output("dfc-page", "style"),
+    Output("tab-dashboard", "className"),
+    Output("tab-dre", "className"),
+    Output("tab-dfc", "className"),
+    Input("url", "pathname"),
+)
+def display_page(pathname):
+    base_tab = "nav-tab nav-link"
+    active_tab = "nav-tab nav-link active"
+
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    if clean_path == "/dre":
+        return (
+            {"display": "none"},
+            {"display": "flex"},
+            {"display": "none"},
+            base_tab,
+            active_tab,
+            base_tab,
+        )
+    elif clean_path == "/dfc":
+        return (
+            {"display": "none"},
+            {"display": "none"},
+            {"display": "flex"},
+            base_tab,
+            base_tab,
+            active_tab,
+        )
+    else:
+        return (
+            {},
+            {"display": "none"},
+            {"display": "none"},
+            active_tab,
+            base_tab,
+            base_tab,
+        )
+
+
 # ==============================================================================
 # SERVER-SIDE INITIAL HYDRATION & APPLICATION ENTRYPOINT
 # ==============================================================================
 # Pre-render the default view directly into the layout tree.
 # This prevents an initial flash of unstyled/empty content before the first callback fires.
-app.layout.children[0].children[0].children = render(
-    [min(YEARS), max(YEARS)], [1, len(SCENARIOS)], "margem_ebitda", "gestao"
+def _hydrate_dashboard_content(tree, content):
+    if hasattr(tree, "id") and getattr(tree, "id") == "dashboard-content":
+        tree.children = content
+        return True
+    children = getattr(tree, "children", None)
+    if children:
+        child_list = children if isinstance(children, list) else [children]
+        for child in child_list:
+            if _hydrate_dashboard_content(child, content):
+                return True
+    return False
+
+
+_hydrate_dashboard_content(
+    app.layout,
+    render([min(YEARS), max(YEARS)], [1, len(SCENARIOS)], "margem_ebitda", "gestao"),
 )
 
 if __name__ == "__main__":
