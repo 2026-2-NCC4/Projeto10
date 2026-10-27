@@ -22,7 +22,7 @@ def create_main_layout(
                         href="/",
                         id="tab-dashboard",
                         className="nav-tab nav-link active",
-                        title="Dashboard (Home)",
+                        title="Dashboard",
                     ),
                     dcc.Link(
                         "DRE",
