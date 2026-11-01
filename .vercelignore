@@ -1,0 +1,11 @@
+# Coursework artifacts and source data are not required by the deployed Dash app.
+(documentos)/
+src/ES e ML/
+src/notebooks/
+src/docs/
+src/data/raw/
+src/data/staging/
+src/data/processed/*.xlsx
+**/__pycache__/
+*.ipynb
+*.pdf
