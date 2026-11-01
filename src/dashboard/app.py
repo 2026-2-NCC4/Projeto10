@@ -134,7 +134,7 @@ from metrics_kpi.terminal_liquidation import build_terminal_liquidation_section
 from perspectives.technical import render_technical_view
 from perspectives.investors import render_investor_view
 from perspectives.management import render_management_view
-from perspectives.dashboard_layout import create_main_layout
+from perspectives.dashboard_layout import build_dfc_table, create_main_layout
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
@@ -186,6 +186,7 @@ server = app.server
 def serve_spa(*args, **kwargs):
     """Support direct URL access and browser refreshes on SPA routes."""
     return app.index(*args, **kwargs)
+
 
 app.layout = create_main_layout(
     YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS, DATA
@@ -404,6 +405,13 @@ def render(years, scenarios, selected_metric, perspective):
                 className="empty-state",
             )
         ]
+
+
+@app.callback(Output("dfc-table-content", "children"), Input("dfc-scenario", "value"))
+def render_dfc(scenario):
+    return build_dfc_table(
+        DATA, YEARS, scenario if scenario in SCENARIOS else SCENARIOS[0]
+    )
 
 
 @app.callback(

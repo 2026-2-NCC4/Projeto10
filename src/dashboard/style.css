@@ -21,7 +21,7 @@
 
   /* Typography and browser defaults */
   font-family: "Google Sans", sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
   color: var(--ink);
   background: #ffffff;
   accent-color: var(--ink);
@@ -41,7 +41,7 @@
 body {
   margin: 0;
   background: #ffffff;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.2;
 }
 
@@ -119,7 +119,7 @@ body {
   height: 100%;
   color: var(--ink-weak);
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
@@ -181,9 +181,25 @@ body {
   letter-spacing: -0.02em;
 }
 
-.dfc-subtitle {
-  margin: 8px 0 24px;
-  color: var(--ink-weak);
+.dfc-scenario {
+  width: min(360px, 100%);
+  margin: 20px 0 24px;
+}
+
+.dfc-scenario label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.dash-dropdown {
+  border: 1px solid var(--ink);
+}
+
+.dash-options-list-option:not(:has(input[disabled])):hover,
+.dash-options-list-option:not(:has(input[disabled])):focus-within {
+  color: var(--ink);
 }
 
 .dfc-table-wrap {
@@ -207,6 +223,7 @@ body {
 }
 
 .dfc-table thead th {
+  font-size: 1.2rem;
   background: var(--sky);
   text-align: left;
   font-weight: 600;
@@ -329,7 +346,7 @@ body {
 
 .hero-copy p {
   margin: 12px 0 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   color: var(--plum);
 }
@@ -413,7 +430,7 @@ body {
 }
 
 .metric-label {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--ink);
 }
@@ -429,7 +446,7 @@ body {
 
 .metric-delta {
   margin-top: 10px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -604,7 +621,7 @@ body {
 
 .panel-note {
   margin: 14px 0 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--ink-weak);
 }
 
@@ -628,7 +645,7 @@ body {
 }
 
 .row-label {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--ink);
 }
 
@@ -653,7 +670,7 @@ body {
   background: var(--fill);
   border-radius: var(--radius);
   border: 1px solid var(--Dash-Stroke-Strong);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   text-align: center;
   color: var(--ink);
@@ -686,7 +703,7 @@ body {
   border-radius: var(--radius);
   background: transparent;
   color: var(--ink-weak);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
   transition:
     background-color 150ms ease-in-out,

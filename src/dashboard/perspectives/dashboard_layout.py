@@ -25,7 +25,7 @@ def _brl(value):
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def _dfc_table(data, years, scenario):
+def build_dfc_table(data, years, scenario):
     cash_flow = data.loc[data["Cenário"].eq(scenario)].set_index("Ano")
     columns = [f"Ano {year}" for year in years]
     return html.Table(
@@ -249,9 +249,25 @@ def create_main_layout(
             html.Div(
                 [
                     html.H1("Demonstrativo do Fluxo de Caixa (DFC)"),
-                    html.P(f"Cenário: {scenarios[0]}", className="dfc-subtitle"),
                     html.Div(
-                        _dfc_table(data, years, scenarios[0]),
+                        [
+                            html.Label("Cenário", htmlFor="dfc-scenario"),
+                            dcc.Dropdown(
+                                id="dfc-scenario",
+                                options=[
+                                    {"label": f"Cenário {index}", "value": scenario}
+                                    for index, scenario in enumerate(scenarios, start=1)
+                                ],
+                                value=scenarios[0],
+                                clearable=False,
+                                searchable=True,
+                            ),
+                        ],
+                        className="dfc-scenario",
+                    ),
+                    html.Div(
+                        build_dfc_table(data, years, scenarios[0]),
+                        id="dfc-table-content",
                         className="dfc-table-wrap",
                     ),
                 ],
