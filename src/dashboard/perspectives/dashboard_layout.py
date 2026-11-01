@@ -2,9 +2,64 @@
 from dash import html, dcc
 from ui_elements import row, panel
 
+DFC_ROWS = (
+    ("Recebimentos de Receita", "FLU Receita"),
+    ("(-) Tributos", "FLU Tributos"),
+    ("(-) Custos", "FLU Custos"),
+    ("(-) Investimentos", "FLU Investimentos"),
+    ("Entradas Financeiras", "FLU Entradas"),
+    ("(-) Despesas Financeiras", "FLU Despesas Financeiras"),
+    ("Resultado Financeiro", "FLU Resultado Financeiro"),
+    (
+        "(-) Imposto de Renda e Contribuição Social",
+        "FLU Imposto de Renda e Contribuicao Social",
+    ),
+    ("(-) Distribuição para Acionistas", "FLU Distribuicao para Acionista"),
+    ("GERAÇÃO DE CAIXA", "FLU Geracao de Caixa"),
+    ("Saldo Inicial de Caixa", "FLU Saldo Inicial"),
+    ("Saldo Final de Caixa", "FLU Saldo Final"),
+)
+
+
+def _brl(value):
+    return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _dfc_table(data, years, scenario):
+    cash_flow = data.loc[data["Cenário"].eq(scenario)].set_index("Ano")
+    columns = [f"Ano {year}" for year in years]
+    return html.Table(
+        [
+            html.Thead(
+                html.Tr(
+                    [html.Th("Conta", scope="col")]
+                    + [html.Th(year, scope="col") for year in columns]
+                )
+            ),
+            html.Tbody(
+                [
+                    html.Tr(
+                        [html.Th(label, scope="row")]
+                        + [
+                            html.Td(_brl(cash_flow.at[year, account]))
+                            for year in columns
+                        ],
+                        className=(
+                            "dfc-total"
+                            if account in {"FLU Geracao de Caixa", "FLU Saldo Final"}
+                            else ""
+                        ),
+                    )
+                    for label, account in DFC_ROWS
+                ]
+            ),
+        ],
+        className="dfc-table",
+    )
+
 
 def create_main_layout(
-    years, scenarios, perspectives, perspective_metrics, metric_labels
+    years, scenarios, perspectives, perspective_metrics, metric_labels, data
 ):
     """Constrói a árvore DOM completa do layout principal do painel (Sidebar e Main)."""
     min_y, max_y = min(years), max(years)
@@ -188,10 +243,20 @@ def create_main_layout(
 
     dfc_div = html.Div(
         id="dfc-page",
-        className="empty-page-container",
+        className="dfc-page",
         style={"display": "none"},
         children=[
-            html.H1("DFC", className="centered-page-text"),
+            html.Div(
+                [
+                    html.H1("Demonstrativo do Fluxo de Caixa (DFC)"),
+                    html.P(f"Cenário: {scenarios[0]}", className="dfc-subtitle"),
+                    html.Div(
+                        _dfc_table(data, years, scenarios[0]),
+                        className="dfc-table-wrap",
+                    ),
+                ],
+                className="dfc-content",
+            ),
         ],
     )
 

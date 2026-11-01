@@ -188,7 +188,7 @@ def serve_spa(*args, **kwargs):
     return app.index(*args, **kwargs)
 
 app.layout = create_main_layout(
-    YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS
+    YEARS, SCENARIOS, PERSPECTIVES, PERSPECTIVE_METRICS, METRIC_LABELS, DATA
 )
 
 
