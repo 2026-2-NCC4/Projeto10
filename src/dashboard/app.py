@@ -77,6 +77,7 @@ HOW TO MANAGE & EXTEND THIS DASHBOARD
 
 # ==============================================================================
 # IMPORTS & SYSTEM DEPENDENCIES
+import re
 import sys, os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -424,6 +425,7 @@ def render_dfc(scenario):
     Input("url", "pathname"),
 )
 def display_page(pathname):
+
     base_tab = "nav-tab nav-link"
     active_tab = "nav-tab nav-link active"
 
@@ -431,12 +433,13 @@ def display_page(pathname):
     if clean_path == "/dre":
         return (
             {"display": "none"},
-            {"display": "flex"},
+            {"display": "block"},
             {"display": "none"},
             base_tab,
             active_tab,
             base_tab,
         )
+    
     elif clean_path == "/dfc":
         return (
             {"display": "none"},
@@ -480,7 +483,189 @@ _hydrate_dashboard_content(
     render([min(YEARS), max(YEARS)], [1, len(SCENARIOS)], "margem_ebitda", "gestao"),
 )
 
+# ==============================================================================
+# CALLBACKS DA DRE
+# ==============================================================================
+@app.callback(
+    Output("dre-filtro-cenario", "options"),
+    Input("dre-filtro-ano", "value")
+)
+def atualizar_options_cenario_dre(ano_selecionado):
+    col_cenario = "Cenário" if "Cenário" in DATA.columns else DATA.columns[1]
+
+    cenarios_brutos = sorted(DATA[col_cenario].dropna().unique())
+
+    options = []
+    for c in cenarios_brutos:
+        num_match = re.search(r'\d+', str(c))
+        num = int(num_match.group()) if num_match else c
+
+        options.append({
+            "label": f"Cenário {num}",
+            "value": c
+        })
+
+    return options
+
+
+@app.callback(
+    Output("tabela-dre-dinamica", "data"),
+    Input("dre-filtro-ano", "value"),
+    Input("dre-filtro-cenario", "value")
+)
+def atualizar_tabela_dre(anos, cenarios):
+    df_filtrado = DATA.copy()
+
+    col_ano = "ano_num" if "ano_num" in df_filtrado.columns else ('Ano' if 'Ano' in df_filtrado.columns else df_filtrado.columns[0])
+    col_cenario = "Cenário" if "Cenário" in df_filtrado.columns else df_filtrado.columns[1]
+
+    if anos is not None:
+        lista_anos = anos if isinstance(anos, list) else [anos]
+        df_filtrado = df_filtrado[df_filtrado[col_ano].isin(lista_anos)]
+
+    if cenarios:
+        lista_cenarios = cenarios if isinstance(cenarios, list) else [cenarios]
+        df_filtrado = df_filtrado[df_filtrado[col_cenario].isin(lista_cenarios)]
+
+    if df_filtrado.empty:
+        return []
+
+    linha = df_filtrado.median(numeric_only=True)
+
+    def formata_moeda(valor):
+        if pd.isna(valor):
+            return "R$ 0,00"
+        texto = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"R$ {texto}"
+
+    dre_vertical = [
+        {"sinal": "+", "conta": "Receita Bruta", "valor": formata_moeda(linha.get("DRE Receita", 0))},
+        {"sinal": "-", "conta": "Tributos", "valor": formata_moeda(linha.get("DRE Tributos", 0))},
+        {"sinal": "-", "conta": "Custos", "valor": formata_moeda(linha.get("DRE Custos", 0))},
+        {"sinal": "-", "conta": "Depreciação e Amortização", "valor": formata_moeda(linha.get("DRE Depreciacao e Amortizacao", 0))},
+        {"sinal": "=", "conta": "Resultado Operacional", "valor": formata_moeda(linha.get("DRE Resultado Operacional", 0))},
+        {"sinal": "+", "conta": "Receitas Financeiras", "valor": formata_moeda(linha.get("DRE Receitas Financeiras", 0))},
+        {"sinal": "-", "conta": "Despesas Financeiras", "valor": formata_moeda(linha.get("DRE Despesas Financeiras", 0))},
+        {"sinal": "=", "conta": "Resultado Financeiro", "valor": formata_moeda(linha.get("DRE Resultado Financeiro", 0))},
+        {"sinal": " ", "conta": "Outros Resultados Operacionais", "valor": formata_moeda(linha.get("DRE Outros Resultados Operacionais", 0))},
+        {"sinal": "=", "conta": "Resultado Antes do Imposto de Renda", "valor": formata_moeda(linha.get("DRE Resultado Antes do Imposto de Renda", 0))},
+        {"sinal": "-", "conta": "Imposto de Renda e Contribuição Social", "valor": formata_moeda(linha.get("DRE Imposto de Renda e Contribuicao Social", 0))},
+        {"sinal": "=", "conta": "Resultado Líquido", "valor": formata_moeda(linha.get("DRE Resultado Liquido", 0))},
+        {"sinal": "=", "conta": "Resultado Líquido após Equivalência", "valor": formata_moeda(linha.get("DRE Resultado Liquido apos Equivalencia", 0))},
+        {"sinal": " ", "conta": "EBITDA", "valor": formata_moeda(linha.get("DRE EBITDA", 0))},
+    ]
+
+    return dre_vertical
+
+
+@app.callback(
+    Output('grafico-melhores-anos-cenarios', 'figure'),
+    Input('grafico-melhores-anos-metrica', 'value')
+)
+def atualizar_grafico_melhores_anos(metrica_escolhida):
+    col_ano = "ano_num" if "ano_num" in DATA.columns else ('Ano' if 'Ano' in DATA.columns else DATA.columns[0])
+    col_cenario = 'Cenário' if 'Cenário' in DATA.columns else DATA.columns[1]
+
+    metrica_alvo = metrica_escolhida if metrica_escolhida else 'DRE Resultado Liquido'
+    nome_metrica = "Resultado Líquido" if metrica_alvo == 'DRE Resultado Liquido' else "DRE EBITDA"
+
+    df_trab = DATA.copy()
+
+    if df_trab.empty or metrica_alvo not in df_trab.columns:
+        return px.bar(title="Sem dados disponíveis")
+
+    num_cenario = pd.to_numeric(df_trab[col_cenario].astype(str).str.extract(r'(\d+)', expand=False), errors='coerce').fillna(0).astype(int)
+
+    df_trab['Ano_Cenario_Label'] = (
+        "Ano = " + df_trab[col_ano].astype(str) + 
+        " | Cenário " + num_cenario.astype(str)
+    )
+
+    top10_combinados = df_trab.sort_values(by=metrica_alvo, ascending=False).head(10)
+
+    fig = px.bar(
+        top10_combinados,
+        x='Ano_Cenario_Label',
+        y=metrica_alvo,
+        text_auto='.2s',
+        labels={'Ano_Cenario_Label': "Ano e Cenário", metrica_alvo: f"{nome_metrica} (R$)"}
+    )
+
+    fig.update_layout(
+        plot_bgcolor='#ffffff',
+        paper_bgcolor='#ffffff',
+        font_family='sans-serif',
+        xaxis_title="Ano | Cenário",
+        yaxis_title=f"{nome_metrica} (R$)",
+        margin=dict(t=40, b=20, l=20, r=20),
+        barcornerradius=4
+    )
+    fig.update_traces(marker_color='#0284c7')
+
+    return fig
+
+
+@app.callback(
+    Output('grafico-top10-cenarios', 'figure'),
+    [
+        Input('grafico-filtro-ano', 'value'),
+        Input('grafico-filtro-metrica', 'value')
+    ]
+)
+def atualizar_grafico_top10(ano_selecionado, metrica_escolhida):
+    col_ano = "ano_num" if "ano_num" in DATA.columns else ('Ano' if 'Ano' in DATA.columns else DATA.columns[0])
+    col_cenario = 'Cenário' if 'Cenário' in DATA.columns else DATA.columns[1]
+
+    metrica_alvo = metrica_escolhida if metrica_escolhida else 'DRE Resultado Liquido'
+    nome_metrica_label = "Resultado Líquido" if metrica_alvo == 'DRE Resultado Liquido' else "EBITDA"
+
+    df_trab = DATA.copy()
+    
+    # 1. Define o Ano 1 como padrão se nenhum ano estiver selecionado no dropdown (None)
+    ano_efetivo = ano_selecionado if ano_selecionado is not None else 1
+
+    df_trab = df_trab[df_trab[col_ano] == ano_efetivo]
+
+    if df_trab.empty or metrica_alvo not in df_trab.columns:
+        return px.line(title="Sem dados disponíveis para esta seleção")
+
+    # Extrai o número do cenário e cria o rótulo "Cenário X"
+    num_cenario = pd.to_numeric(df_trab[col_cenario].astype(str).str.extract(r'(\d+)', expand=False), errors='coerce').fillna(0).astype(int)
+    df_trab['Cenario_Formatado'] = "Cenário " + num_cenario.astype(str)
+
+    # Ordena pelos 10 melhores
+    top10 = df_trab.sort_values(by=metrica_alvo, ascending=False).head(10)
+
+    # Gráfico de Linha com Marcadores (bolinhas)
+    fig = px.line(
+        top10,
+        x='Cenario_Formatado',
+        y=metrica_alvo,
+        markers=True,
+        text=top10[metrica_alvo].apply(lambda v: f"{v:,.0f}".replace(",", ".")),
+        labels={'Cenario_Formatado': "Cenário Simulado", metrica_alvo: f"{nome_metrica_label} (R$)"}
+    )
+
+    # Estilização visual mantendo as cores e marcadores circulares
+    fig.update_traces(
+        line_color="#0284c7",
+        line_width=3,
+        marker=dict(size=10, color="#0284c7", symbol='circle'),
+        textposition='top center'
+    )
+
+    fig.update_layout(
+        plot_bgcolor='#ffffff',
+        paper_bgcolor='#ffffff',
+        font_family='sans-serif',
+        xaxis_title="Cenário",
+        yaxis_title=f"{nome_metrica_label} (R$)",
+        margin=dict(t=40, b=20, l=20, r=20)
+    )
+
+    return fig
+
 if __name__ == "__main__":
     # To run in debug mode for development (auto-reload on save, detailed in-browser debugger):
     # Change to: app.run(debug=True, port=8050)
-    app.run(debug=False)
+    app.run(debug=True)

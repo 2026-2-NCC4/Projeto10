@@ -1,5 +1,5 @@
-# src/dashboard/dashboard_layout.py
-from dash import html, dcc
+# src/dashboard/perspectives/dashboard_layout.py
+from dash import html, dcc, dash_table
 from ui_elements import row, panel
 
 DFC_ROWS = (
@@ -62,6 +62,7 @@ def create_main_layout(
     years, scenarios, perspectives, perspective_metrics, metric_labels, data
 ):
     """Constrói a árvore DOM completa do layout principal do painel (Sidebar e Main)."""
+    print("ENTROU NA FUNÇÃO CREATE_MAIN_LAYOUT!", flush=True)
     min_y, max_y = min(years), max(years)
     n_scenarios = len(scenarios)
 
@@ -234,10 +235,274 @@ def create_main_layout(
 
     dre_div = html.Div(
         id="dre-page",
-        className="empty-page-container",
+        className="dre-page",
         style={"display": "none"},
         children=[
-            html.H1("DRE", className="centered-page-text"),
+            html.Div(
+                style={
+                    "backgroundColor": "#f8fafc",
+                    "minHeight": "100vh",
+                    "padding": "30px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "24px",
+                },
+                children=[
+                    html.Div(
+                        style={
+                            "backgroundColor": "#ffffff",
+                            "padding": "24px",
+                            "borderRadius": "8px",
+                            "border": "1px solid #e2e8f0",
+                            "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+                            "textAlign": "center",
+                        },
+                        children=[
+                            html.H2(
+                                "Demonstração do Resultado do Exercício (DRE)",
+                                style={
+                                    "color": "#0f172a",
+                                    "margin": "0 0 4px 0",
+                                    "fontWeight": "bold",
+                                    "fontFamily": "sans-serif",
+                                    "fontSize": "22px",
+                                },
+                            ),
+                            html.P(
+                                "Acompanhe a performance financeira e os resultados operacionais.",
+                                style={
+                                    "color": "#64748b",
+                                    "margin": "0",
+                                    "fontSize": "14px",
+                                    "fontFamily": "sans-serif",
+                                },
+                            ),
+                        ],
+                    ),
+
+                    html.Div(
+                        style={
+                            "display": "flex",
+                            "flexDirection": "column",
+                            "gap": "24px",
+                            "width": "100%",
+                        },
+                        children=[
+                            
+                            # ==========================================
+                            # BLOCO 1: TABELA DRE COM SEU FILTRO PRÓPRIO
+                            # ==========================================
+                            html.Div(
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderRadius": "8px",
+                                    "border": "1px solid #e2e8f0",
+                                    "padding": "20px",
+                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+                                },
+                                children=[
+                                    html.H3("Tabela DRE", style={"color": "#0f172a", "fontSize": "16px", "marginBottom": "16px"}),
+                                    
+                                    # Filtro interno da DRE (Inicia por padrão no Ano 1)
+                                    html.Div(
+                                        style={"marginBottom": "20px", "display": "flex", "gap": "16px"},
+                                        children=[
+                                            html.Div(
+                                                style={"width": "220px"},
+                                                children=[
+                                                    html.Label("Ano", style={"fontSize": "12px", "fontWeight": "600", "color": "var(--dark-blue)", "marginBottom": "4px", "display": "block"}),
+                                                    dcc.Dropdown(
+                                                        id="dre-filtro-ano",
+                                                        options=[{"label": f"Ano {a}", "value": a} for a in years],
+                                                        value=1,  
+                                                        clearable=False
+                                                    )
+                                                ]
+                                            ),
+                                            html.Div(
+                                                style={"width": "220px"},
+                                                children=[
+                                                    html.Label("Cenário", style={"fontSize": "12px", "fontWeight": "600", "color": "var(--dark-blue)", "marginBottom": "4px", "display": "block"}),
+                                                    dcc.Dropdown(
+                                                        id="dre-filtro-cenario",
+                                                        options=[{"label": str(c), "value": c} for c in scenarios],
+                                                        placeholder="Selecione o cenário...",
+                                                        multi=True
+                                                    )
+                                                ]
+                                            )
+                                        ]
+                                    ),
+
+                                    # TABELA DRE
+                                    dash_table.DataTable(
+                                        id="tabela-dre-dinamica",
+                                        columns=[
+                                            {"name": "", "id": "sinal"},
+                                            {"name": "Descrição da Conta", "id": "conta"},
+                                            {"name": "Valor Consolidado", "id": "valor"},
+                                        ],
+                                        data=[],
+                                        style_table={"overflowX": "auto", "minWidth": "100%"},
+                                        style_cell={
+                                            "backgroundColor": "#ffffff",
+                                            "color": "var(--ink)",
+                                            "border": "none",
+                                            "borderBottom": "1px solid #f1f5f9",
+                                            "padding": "14px 16px",
+                                            "fontFamily": "sans-serif",
+                                        },
+                                        style_cell_conditional=[
+                                            {"if": {"column_id": "sinal"}, "width": "50px", "textAlign": "center", "fontWeight": "bold", "fontSize": "16px", "color": "#94a3b8"},
+                                            {"if": {"column_id": "conta"}, "textAlign": "left"},
+                                            {"if": {"column_id": "valor"}, "textAlign": "right", "width": "250px", "fontFamily": "monospace"},
+                                        ],
+                                        style_header={
+                                            "backgroundColor": "var(--fill-hover)",
+                                            "color": "var(--ink)",
+                                            "fontWeight": "bold",
+                                            "border": "none",
+                                            "textAlign": "left",
+                                        },
+                                        style_data_conditional=[
+                                            {
+                                                "if": {"filter_query": '{sinal} = "="'},
+                                                "backgroundColor": "var(--light-blue)",
+                                                "color": "#00395F",
+                                            },
+                                            {
+                                                "if": {
+                                                    "filter_query": '{valor} contains "-"',
+                                                    "column_id": "valor",
+                                                },
+                                                "color": "#dc2626",
+                                                "fontWeight": "normal",
+                                            },
+                                        ],
+                                    )
+                                ],
+                            ),
+                            # ==========================================
+                            # GRÁFICO DE MELHORES ANOS E CENÁRIOS
+                            # ==========================================
+                            html.Div(
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderRadius": "8px",
+                                    "border": "1px solid #e2e8f0",
+                                    "padding": "20px",
+                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+                                },
+                                children=[
+                                    html.H3("Melhores Anos e Cenários", style={"color": "#0f172a", "fontSize": "16px", "marginBottom": "16px"}),
+
+                                    # Filtro de Métrica exclusivo para este gráfico
+                                    html.Div(
+                                        style={"marginBottom": "16px", "width": "240px"},
+                                        children=[
+                                            html.Label(
+                                                "Métrica de Análise",
+                                                style={
+                                                    "fontSize": "12px",
+                                                    "fontWeight": "600",
+                                                    "color": "var(--dark-blue)",
+                                                    "marginBottom": "4px",
+                                                    "display": "block",
+                                                },
+                                            ),
+                                            dcc.Dropdown(
+                                                id="grafico-melhores-anos-metrica",
+                                                options=[
+                                                    {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
+                                                    {"label": "EBITDA", "value": "DRE EBITDA"}
+                                                ],
+                                                value="DRE Resultado Liquido",  # Padrão inicial
+                                                clearable=False
+                                            ),
+                                        ],
+                                    ),
+
+                                    # GRÁFICO DE BARRAS (Melhores Anos + Cenários)
+                                    dcc.Graph(id="grafico-melhores-anos-cenarios"),
+                                ],
+                            ),
+
+                            # ==========================================
+                            # GRÁFICO TOP 10 COM SEU FILTRO PRÓPRIO
+                            # ==========================================
+                            html.Div(
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderRadius": "8px",
+                                    "border": "1px solid #e2e8f0",
+                                    "padding": "20px",
+                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+                                },
+                                children=[
+                                    html.H3("Melhores Cenários", style={"color": "var(--dark-blue)", "fontSize": "16px", "marginBottom": "16px"}),
+
+                                    html.Div(
+                                        style={"display": "flex", "gap": "16px", "marginBottom": "16px"},
+                                        children=[
+
+                                            html.Div(
+                                                style={"width": "220px"},
+                                                children=[
+                                                    html.Label(
+                                                        "Ano",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "fontWeight": "600",
+                                                            "color": "var(--dark-blue)",
+                                                            "marginBottom": "4px",
+                                                            "display": "block",
+                                                        },
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="grafico-filtro-ano",
+                                                        options=[{"label": f"Ano {a}", "value": a} for a in years],
+                                                        value=1,  
+                                                        clearable=False
+                                                    ),
+                                                ],
+                                            ),
+
+                                            # 2. NOVO FILTRO: Métrica de Avaliação (Resultado Líquido vs EBITDA)
+                                            html.Div(
+                                                style={"width": "240px"},
+                                                children=[
+                                                    html.Label(
+                                                        "Métrica de Avaliação",
+                                                        style={
+                                                            "fontSize": "12px",
+                                                            "fontWeight": "600",
+                                                            "color": "var(--dark-blue)",
+                                                            "marginBottom": "4px",
+                                                            "display": "block",
+                                                        },
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="grafico-filtro-metrica",
+                                                        options=[
+                                                            {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
+                                                            {"label": "EBITDA", "value": "DRE EBITDA"}
+                                                        ],
+                                                        value="DRE Resultado Liquido",  
+                                                        clearable=False
+                                                    ),
+                                                ],
+                                            ),
+                                        ]
+                                    ),
+
+                                    # GRÁFICO DE BARRAS
+                                    dcc.Graph(id="grafico-top10-cenarios"),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            )
         ],
     )
 
