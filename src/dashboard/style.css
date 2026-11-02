@@ -12,7 +12,12 @@
   --fill-hover: #e9e9e9;
   --plum: #501839;
   --sky: #55a9e8;
+  --blue: #0284c7;
   --sky-weak: #c5e6ff;
+  --light-blue: #cee7f6;
+  --dark-blue: #0f172a;
+  
+
 
   /* Layout */
   --navbar-height: 48px;
@@ -163,6 +168,14 @@ body {
   text-align: center;
   margin: 0;
   letter-spacing: -0.02em;
+}
+/* Efeito de destaque ao passar o mouse sobre cada linha da tabela */
+#tabela-dre-dinamica .dash-spreadsheet-inner tr:hover td {
+    transform: scale(1.01);
+    transition: transform 0.20s ease-in-out, background-color 0.15s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 1;
+    position: relative;
 }
 
 .dfc-page {
