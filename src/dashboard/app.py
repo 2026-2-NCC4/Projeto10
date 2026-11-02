@@ -312,7 +312,7 @@ def render_content(
     # --------------------------------------------------------------------------
     if perspective == "tecnica":
         return render_technical_view(
-            index_fig, subtitle, tiles2, technical_insights, risk_fig, distribution
+            index_fig, subtitle, latest, tiles2, technical_insights, risk_fig, distribution
         )
 
     if perspective == "investidores":
@@ -333,6 +333,7 @@ def render_content(
     return render_management_view(
         index_fig,
         subtitle,
+        latest,
         tiles1,
         management_insights,
         trend,
