@@ -4,6 +4,7 @@
 <a href="https://www.fecap.br/"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhZPrRa89Kma0ZZogxm0pi-tCn_TLKeHGVxywp-LXAFGR3B1DPouAJYHgKZGV0XTEf4AE&usqp=CAU" alt="FECAP - Fundação de Comércio Álvares Penteado" border="0"></a>
 
 <h1>Nome do Projeto: Nour</h1>
+<p><a href="https://dashboard-nour.vercel.app/">https://dashboard-nour.vercel.app</a></p>
 </div>
 <br/>
 
@@ -24,12 +25,12 @@
 
 ## Entregas das Disciplinas
 
-|          Disciplina          |                                                                   Entrega 1                                                                   | Entrega 2 |
-| :--------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------: | :-------: |
-| Análise Inferencial de Dados | [entrega-1/analise-inferencial-dados/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/analise-inferencial-dados>) |     -     |
-|        Contabilidade         |             [entrega-1/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/contabilidade>)             |     -     |
-|    Engenharia de Software    |    [entrega-1/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software>)    |     -     |
-|   Projeto Interdisciplinar   |  [entrega-1/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar>)  |     -     |
+|          Disciplina          |                                                                   Entrega 1                                                                   |                                                                   Entrega 2                                                                   |
+| :--------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------: |
+| Análise Inferencial de Dados | [entrega-1/analise-inferencial-dados/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/analise-inferencial-dados>) | [entrega-2/analise-inferencial-dados/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-2/analise-inferencial-dados>) |
+|        Contabilidade         |             [entrega-1/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/contabilidade>)             |             [entrega-2/contabilidade/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-2/contabilidade>)             |
+|    Engenharia de Software    |    [entrega-1/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/engenharia-de-software>)    |    [entrega-2/engenharia-de-software/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-2/engenharia-de-software>)    |
+|   Projeto Interdisciplinar   |  [entrega-1/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-1/projeto-interdisciplinar>)  |  [entrega-2/projeto-interdisciplinar/](<https://github.com/2026-2-NCC4/Projeto10/tree/main/(documentos)/entrega-2/projeto-interdisciplinar>)  |
 
 <br/>
 
@@ -61,7 +62,6 @@ Projeto10/
     │   ├── staging/
     │   └── processed/
     ├── docs/
-    ├── ES e ML/
     ├── notebooks/
 └── README.md
 ```
@@ -121,18 +121,8 @@ pip install -r requirements.txt
 
 # Rode o dashboard localmente
 python src/dashboard/app.py
-```
 
-5. Configure as variáveis de ambiente, caso sejam necessárias para fontes externas de dados. Utilize o arquivo `.env.example` como referência e mantenha informações sensíveis fora do repositório.
-
-```bash
-[...]
-```
-
-9. Acesse o endereço local no navegador:
-
-```bash
-http://127.0.0.1:8050
+# Acesse no navegador: http://127.0.0.1:8050
 ```
 
 <br/>
@@ -186,5 +176,5 @@ O dashboard deverá disponibilizar pelo menos cinco indicadores, filtros e compa
 
 ## 🎓 Referências
 
-[Creative Commons](https://creativecommons.org/share-your-work/)
+[Creative Commons](https://creativecommons.org/share-your-work/)  
 [Template PI FECAP](https://github.com/fecaphub/Template_PI)
