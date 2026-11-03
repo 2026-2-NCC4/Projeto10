@@ -178,10 +178,11 @@ body {
     position: relative;
 }
 
+/* Unified statement page wrapper: DRE and DFC share the same base layout rule */
+.dre-page,
 .dfc-page {
   width: 100%;
   min-height: calc(100vh - var(--navbar-height));
-  padding: 40px;
 }
 
 .dfc-content {

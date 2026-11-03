@@ -58,6 +58,390 @@ def build_dfc_table(data, years, scenario):
     )
 
 
+# ==============================================================================
+# FINANCIAL STATEMENTS (DRE / DFC) UNIFIED DESIGN SYSTEM
+# ==============================================================================
+STATEMENT_CONTAINER_STYLE = {
+    "backgroundColor": "#f8fafc",
+    "minHeight": "100vh",
+    "padding": "30px",
+    "display": "flex",
+    "flexDirection": "column",
+    "gap": "24px",
+}
+
+STATEMENT_HEADER_CARD_STYLE = {
+    "backgroundColor": "#ffffff",
+    "padding": "24px",
+    "borderRadius": "8px",
+    "border": "1px solid #e2e8f0",
+    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+    "textAlign": "center",
+}
+
+STATEMENT_TITLE_STYLE = {
+    "color": "#0f172a",
+    "margin": "0 0 4px 0",
+    "fontWeight": "bold",
+    "fontFamily": "sans-serif",
+    "fontSize": "22px",
+}
+
+STATEMENT_SUBTITLE_STYLE = {
+    "color": "#64748b",
+    "margin": "0",
+    "fontSize": "14px",
+    "fontFamily": "sans-serif",
+}
+
+STATEMENT_CONTENT_STYLE = {
+    "display": "flex",
+    "flexDirection": "column",
+    "gap": "24px",
+    "width": "100%",
+}
+
+STATEMENT_CARD_STYLE = {
+    "backgroundColor": "#ffffff",
+    "borderRadius": "8px",
+    "border": "1px solid #e2e8f0",
+    "padding": "20px",
+    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+}
+
+SECTION_TITLE_STYLE = {
+    "color": "#0f172a",
+    "fontSize": "16px",
+    "marginBottom": "16px",
+}
+
+FILTER_LABEL_STYLE = {
+    "fontSize": "12px",
+    "fontWeight": "600",
+    "color": "var(--dark-blue)",
+    "marginBottom": "4px",
+    "display": "block",
+}
+
+STATEMENT_TABLE_CONFIG = {
+    "columns": [
+        {"name": "", "id": "sinal"},
+        {"name": "Descrição da Conta", "id": "conta"},
+        {"name": "Valor Consolidado", "id": "valor"},
+    ],
+    "style_table": {"overflowX": "auto", "minWidth": "100%"},
+    "style_cell": {
+        "backgroundColor": "#ffffff",
+        "color": "var(--ink)",
+        "border": "none",
+        "borderBottom": "1px solid #f1f5f9",
+        "padding": "14px 16px",
+        "fontFamily": "sans-serif",
+    },
+    "style_cell_conditional": [
+        {
+            "if": {"column_id": "sinal"},
+            "width": "50px",
+            "textAlign": "center",
+            "fontWeight": "bold",
+            "fontSize": "16px",
+            "color": "#94a3b8",
+        },
+        {"if": {"column_id": "conta"}, "textAlign": "left"},
+        {
+            "if": {"column_id": "valor"},
+            "textAlign": "right",
+            "width": "250px",
+            "fontFamily": "monospace",
+        },
+    ],
+    "style_header": {
+        "backgroundColor": "var(--fill-hover)",
+        "color": "var(--ink)",
+        "fontWeight": "bold",
+        "border": "none",
+        "textAlign": "left",
+    },
+    "style_data_conditional": [
+        {
+            "if": {"filter_query": '{sinal} = "="'},
+            "backgroundColor": "var(--light-blue)",
+            "color": "#00395F",
+        },
+        {
+            "if": {
+                "filter_query": '{valor} contains "-"',
+                "column_id": "valor",
+            },
+            "color": "#dc2626",
+            "fontWeight": "normal",
+        },
+    ],
+}
+
+
+def build_statement_filter_field(
+    label: str, control, width: str = "220px", margin_bottom: str = None
+):
+    """Cria um campo de filtro padronizado com rótulo e componente."""
+    style = {"width": width}
+    if margin_bottom:
+        style["marginBottom"] = margin_bottom
+    return html.Div(
+        style=style,
+        children=[
+            html.Label(label, style=FILTER_LABEL_STYLE),
+            control,
+        ],
+    )
+
+
+def build_statement_card(title: str, children: list, title_color: str = None):
+    """Cria um card padronizado para seções com título e conteúdo."""
+    title_style = dict(SECTION_TITLE_STYLE)
+    if title_color:
+        title_style["color"] = title_color
+    return html.Div(
+        style=STATEMENT_CARD_STYLE,
+        children=[
+            html.H3(title, style=title_style),
+            *children,
+        ],
+    )
+
+
+def build_statement_table(table_id: str):
+    """Cria a DataTable padronizada de demonstrativo financeiro."""
+    return dash_table.DataTable(
+        id=table_id,
+        data=[],
+        **STATEMENT_TABLE_CONFIG,
+    )
+
+
+def build_statement_page(
+    page_id: str,
+    title: str,
+    subtitle: str,
+    table_title: str,
+    table_id: str,
+    filtro_ano_id: str,
+    filtro_cenario_id: str,
+    melhores_anos_metrica_id: str,
+    melhores_anos_graph_id: str,
+    melhores_anos_options: list,
+    top10_ano_id: str,
+    top10_metrica_id: str,
+    top10_graph_id: str,
+    top10_options: list,
+    years: list,
+    scenarios: list,
+):
+    """Constrói a árvore DOM de uma página de demonstrativo financeiro vertical (e.g. DRE).
+
+    Layout: header card → tabela vertical (sinal/conta/valor) com filtros de ano/cenário
+    → gráfico de melhores anos+cenários → gráfico top-10 cenários por ano.
+    """
+    header_card = html.Div(
+        style=STATEMENT_HEADER_CARD_STYLE,
+        children=[
+            html.H2(title, style=STATEMENT_TITLE_STYLE),
+            html.P(subtitle, style=STATEMENT_SUBTITLE_STYLE),
+        ],
+    )
+
+    table_filters = html.Div(
+        style={"marginBottom": "20px", "display": "flex", "gap": "16px"},
+        children=[
+            build_statement_filter_field(
+                "Ano",
+                dcc.Dropdown(
+                    id=filtro_ano_id,
+                    options=[{"label": f"Ano {a}", "value": a} for a in years],
+                    value=1,
+                    clearable=False,
+                    placeholder="Selecione o ano...",
+                ),
+                width="220px",
+            ),
+            build_statement_filter_field(
+                "Cenário",
+                dcc.Dropdown(
+                    id=filtro_cenario_id,
+                    options=[{"label": str(c), "value": c} for c in scenarios],
+                    placeholder="Selecione o cenário...",
+                    multi=True,
+                ),
+                width="220px",
+            ),
+        ],
+    )
+
+    table_card = build_statement_card(
+        table_title,
+        [table_filters, build_statement_table(table_id)],
+    )
+
+    chart1_filter = build_statement_filter_field(
+        "Métrica de Análise",
+        dcc.Dropdown(
+            id=melhores_anos_metrica_id,
+            options=melhores_anos_options,
+            value=melhores_anos_options[0]["value"] if melhores_anos_options else None,
+            clearable=False,
+        ),
+        width="240px",
+        margin_bottom="16px",
+    )
+
+    chart1_card = build_statement_card(
+        "Melhores Anos e Cenários",
+        [chart1_filter, dcc.Graph(id=melhores_anos_graph_id)],
+    )
+
+    chart2_filters = html.Div(
+        style={"display": "flex", "gap": "16px", "marginBottom": "16px"},
+        children=[
+            build_statement_filter_field(
+                "Ano",
+                dcc.Dropdown(
+                    id=top10_ano_id,
+                    options=[{"label": f"Ano {a}", "value": a} for a in years],
+                    value=1,
+                    clearable=False,
+                ),
+                width="220px",
+            ),
+            build_statement_filter_field(
+                "Métrica de Avaliação",
+                dcc.Dropdown(
+                    id=top10_metrica_id,
+                    options=top10_options,
+                    value=top10_options[0]["value"] if top10_options else None,
+                    clearable=False,
+                ),
+                width="240px",
+            ),
+        ],
+    )
+
+    chart2_card = build_statement_card(
+        "Melhores Cenários",
+        [chart2_filters, dcc.Graph(id=top10_graph_id)],
+        title_color="var(--dark-blue)",
+    )
+
+    return html.Div(
+        id=page_id,
+        className=page_id,
+        style={"display": "none"},
+        children=[
+            html.Div(
+                style=STATEMENT_CONTAINER_STYLE,
+                children=[
+                    header_card,
+                    html.Div(
+                        style=STATEMENT_CONTENT_STYLE,
+                        children=[
+                            table_card,
+                            chart1_card,
+                            chart2_card,
+                        ],
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+def build_dfc_page(
+    page_id: str, title: str, subtitle: str, years: list, scenarios: list, data
+):
+    """Constrói a árvore DOM da página DFC.
+
+    A DFC é um conceito diferente da DRE: exibe uma tabela pivot horizontal com
+    todos os anos nas colunas e um cenário selecionado de cada vez. Não contém
+    gráficos abaixo — apenas os filtros de cenário e anos e a tabela pivot.
+
+    Reutiliza os tokens visuais do design system (header card, card de conteúdo,
+    estilos de filtro) para consistência visual com a DRE.
+    """
+    header_card = html.Div(
+        style=STATEMENT_HEADER_CARD_STYLE,
+        children=[
+            html.H2(title, style=STATEMENT_TITLE_STYLE),
+            html.P(subtitle, style=STATEMENT_SUBTITLE_STYLE),
+        ],
+    )
+
+    filters_row = html.Div(
+        style={
+            "marginBottom": "20px",
+            "display": "flex",
+            "gap": "16px",
+            "flexWrap": "wrap",
+        },
+        children=[
+            build_statement_filter_field(
+                "Cenário",
+                dcc.Dropdown(
+                    id="dfc-scenario",
+                    options=[
+                        {"label": f"Cenário {index}", "value": scenario}
+                        for index, scenario in enumerate(scenarios, start=1)
+                    ],
+                    value=scenarios[0],
+                    clearable=False,
+                    searchable=True,
+                ),
+                width="260px",
+            ),
+            build_statement_filter_field(
+                "Anos",
+                dcc.Dropdown(
+                    id="dfc-years",
+                    options=[{"label": f"Ano {year}", "value": year} for year in years],
+                    value=list(years),
+                    multi=True,
+                    clearable=False,
+                    searchable=True,
+                ),
+                width="400px",
+            ),
+        ],
+    )
+
+    table_card = build_statement_card(
+        "Tabela DFC",
+        [
+            filters_row,
+            html.Div(
+                build_dfc_table(data, years, scenarios[0]),
+                id="dfc-table-content",
+                className="dfc-table-wrap",
+            ),
+        ],
+    )
+
+    return html.Div(
+        id=page_id,
+        className=page_id,
+        style={"display": "none"},
+        children=[
+            html.Div(
+                style=STATEMENT_CONTAINER_STYLE,
+                children=[
+                    header_card,
+                    html.Div(
+                        style=STATEMENT_CONTENT_STYLE,
+                        children=[table_card],
+                    ),
+                ],
+            )
+        ],
+    )
+
+
 def create_main_layout(
     years, scenarios, perspectives, perspective_metrics, metric_labels, data
 ):
@@ -233,312 +617,38 @@ def create_main_layout(
         ],
     )
 
-    dre_div = html.Div(
-        id="dre-page",
-        className="dre-page",
-        style={"display": "none"},
-        children=[
-            html.Div(
-                style={
-                    "backgroundColor": "#f8fafc",
-                    "minHeight": "100vh",
-                    "padding": "30px",
-                    "display": "flex",
-                    "flexDirection": "column",
-                    "gap": "24px",
-                },
-                children=[
-                    html.Div(
-                        style={
-                            "backgroundColor": "#ffffff",
-                            "padding": "24px",
-                            "borderRadius": "8px",
-                            "border": "1px solid #e2e8f0",
-                            "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
-                            "textAlign": "center",
-                        },
-                        children=[
-                            html.H2(
-                                "Demonstração do Resultado do Exercício (DRE)",
-                                style={
-                                    "color": "#0f172a",
-                                    "margin": "0 0 4px 0",
-                                    "fontWeight": "bold",
-                                    "fontFamily": "sans-serif",
-                                    "fontSize": "22px",
-                                },
-                            ),
-                            html.P(
-                                "Acompanhe a performance financeira e os resultados operacionais.",
-                                style={
-                                    "color": "#64748b",
-                                    "margin": "0",
-                                    "fontSize": "14px",
-                                    "fontFamily": "sans-serif",
-                                },
-                            ),
-                        ],
-                    ),
-
-                    html.Div(
-                        style={
-                            "display": "flex",
-                            "flexDirection": "column",
-                            "gap": "24px",
-                            "width": "100%",
-                        },
-                        children=[
-                            
-                            # ==========================================
-                            # BLOCO 1: TABELA DRE COM SEU FILTRO PRÓPRIO
-                            # ==========================================
-                            html.Div(
-                                style={
-                                    "backgroundColor": "#ffffff",
-                                    "borderRadius": "8px",
-                                    "border": "1px solid #e2e8f0",
-                                    "padding": "20px",
-                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
-                                },
-                                children=[
-                                    html.H3("Tabela DRE", style={"color": "#0f172a", "fontSize": "16px", "marginBottom": "16px"}),
-                                    
-                                    # Filtro interno da DRE (Inicia por padrão no Ano 1)
-                                    html.Div(
-                                        style={"marginBottom": "20px", "display": "flex", "gap": "16px"},
-                                        children=[
-                                            html.Div(
-                                                style={"width": "220px"},
-                                                children=[
-                                                    html.Label("Ano", style={"fontSize": "12px", "fontWeight": "600", "color": "var(--dark-blue)", "marginBottom": "4px", "display": "block"}),
-                                                    dcc.Dropdown(
-                                                        id="dre-filtro-ano",
-                                                        options=[{"label": f"Ano {a}", "value": a} for a in years],
-                                                        value=1,  
-                                                        clearable=False
-                                                    )
-                                                ]
-                                            ),
-                                            html.Div(
-                                                style={"width": "220px"},
-                                                children=[
-                                                    html.Label("Cenário", style={"fontSize": "12px", "fontWeight": "600", "color": "var(--dark-blue)", "marginBottom": "4px", "display": "block"}),
-                                                    dcc.Dropdown(
-                                                        id="dre-filtro-cenario",
-                                                        options=[{"label": str(c), "value": c} for c in scenarios],
-                                                        placeholder="Selecione o cenário...",
-                                                        multi=True
-                                                    )
-                                                ]
-                                            )
-                                        ]
-                                    ),
-
-                                    # TABELA DRE
-                                    dash_table.DataTable(
-                                        id="tabela-dre-dinamica",
-                                        columns=[
-                                            {"name": "", "id": "sinal"},
-                                            {"name": "Descrição da Conta", "id": "conta"},
-                                            {"name": "Valor Consolidado", "id": "valor"},
-                                        ],
-                                        data=[],
-                                        style_table={"overflowX": "auto", "minWidth": "100%"},
-                                        style_cell={
-                                            "backgroundColor": "#ffffff",
-                                            "color": "var(--ink)",
-                                            "border": "none",
-                                            "borderBottom": "1px solid #f1f5f9",
-                                            "padding": "14px 16px",
-                                            "fontFamily": "sans-serif",
-                                        },
-                                        style_cell_conditional=[
-                                            {"if": {"column_id": "sinal"}, "width": "50px", "textAlign": "center", "fontWeight": "bold", "fontSize": "16px", "color": "#94a3b8"},
-                                            {"if": {"column_id": "conta"}, "textAlign": "left"},
-                                            {"if": {"column_id": "valor"}, "textAlign": "right", "width": "250px", "fontFamily": "monospace"},
-                                        ],
-                                        style_header={
-                                            "backgroundColor": "var(--fill-hover)",
-                                            "color": "var(--ink)",
-                                            "fontWeight": "bold",
-                                            "border": "none",
-                                            "textAlign": "left",
-                                        },
-                                        style_data_conditional=[
-                                            {
-                                                "if": {"filter_query": '{sinal} = "="'},
-                                                "backgroundColor": "var(--light-blue)",
-                                                "color": "#00395F",
-                                            },
-                                            {
-                                                "if": {
-                                                    "filter_query": '{valor} contains "-"',
-                                                    "column_id": "valor",
-                                                },
-                                                "color": "#dc2626",
-                                                "fontWeight": "normal",
-                                            },
-                                        ],
-                                    )
-                                ],
-                            ),
-                            # ==========================================
-                            # GRÁFICO DE MELHORES ANOS E CENÁRIOS
-                            # ==========================================
-                            html.Div(
-                                style={
-                                    "backgroundColor": "#ffffff",
-                                    "borderRadius": "8px",
-                                    "border": "1px solid #e2e8f0",
-                                    "padding": "20px",
-                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
-                                },
-                                children=[
-                                    html.H3("Melhores Anos e Cenários", style={"color": "#0f172a", "fontSize": "16px", "marginBottom": "16px"}),
-
-                                    # Filtro de Métrica exclusivo para este gráfico
-                                    html.Div(
-                                        style={"marginBottom": "16px", "width": "240px"},
-                                        children=[
-                                            html.Label(
-                                                "Métrica de Análise",
-                                                style={
-                                                    "fontSize": "12px",
-                                                    "fontWeight": "600",
-                                                    "color": "var(--dark-blue)",
-                                                    "marginBottom": "4px",
-                                                    "display": "block",
-                                                },
-                                            ),
-                                            dcc.Dropdown(
-                                                id="grafico-melhores-anos-metrica",
-                                                options=[
-                                                    {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
-                                                    {"label": "EBITDA", "value": "DRE EBITDA"}
-                                                ],
-                                                value="DRE Resultado Liquido",  # Padrão inicial
-                                                clearable=False
-                                            ),
-                                        ],
-                                    ),
-
-                                    # GRÁFICO DE BARRAS (Melhores Anos + Cenários)
-                                    dcc.Graph(id="grafico-melhores-anos-cenarios"),
-                                ],
-                            ),
-
-                            # ==========================================
-                            # GRÁFICO TOP 10 COM SEU FILTRO PRÓPRIO
-                            # ==========================================
-                            html.Div(
-                                style={
-                                    "backgroundColor": "#ffffff",
-                                    "borderRadius": "8px",
-                                    "border": "1px solid #e2e8f0",
-                                    "padding": "20px",
-                                    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
-                                },
-                                children=[
-                                    html.H3("Melhores Cenários", style={"color": "var(--dark-blue)", "fontSize": "16px", "marginBottom": "16px"}),
-
-                                    html.Div(
-                                        style={"display": "flex", "gap": "16px", "marginBottom": "16px"},
-                                        children=[
-
-                                            html.Div(
-                                                style={"width": "220px"},
-                                                children=[
-                                                    html.Label(
-                                                        "Ano",
-                                                        style={
-                                                            "fontSize": "12px",
-                                                            "fontWeight": "600",
-                                                            "color": "var(--dark-blue)",
-                                                            "marginBottom": "4px",
-                                                            "display": "block",
-                                                        },
-                                                    ),
-                                                    dcc.Dropdown(
-                                                        id="grafico-filtro-ano",
-                                                        options=[{"label": f"Ano {a}", "value": a} for a in years],
-                                                        value=1,  
-                                                        clearable=False
-                                                    ),
-                                                ],
-                                            ),
-
-                                            # 2. NOVO FILTRO: Métrica de Avaliação (Resultado Líquido vs EBITDA)
-                                            html.Div(
-                                                style={"width": "240px"},
-                                                children=[
-                                                    html.Label(
-                                                        "Métrica de Avaliação",
-                                                        style={
-                                                            "fontSize": "12px",
-                                                            "fontWeight": "600",
-                                                            "color": "var(--dark-blue)",
-                                                            "marginBottom": "4px",
-                                                            "display": "block",
-                                                        },
-                                                    ),
-                                                    dcc.Dropdown(
-                                                        id="grafico-filtro-metrica",
-                                                        options=[
-                                                            {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
-                                                            {"label": "EBITDA", "value": "DRE EBITDA"}
-                                                        ],
-                                                        value="DRE Resultado Liquido",  
-                                                        clearable=False
-                                                    ),
-                                                ],
-                                            ),
-                                        ]
-                                    ),
-
-                                    # GRÁFICO DE BARRAS
-                                    dcc.Graph(id="grafico-top10-cenarios"),
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            )
+    dre_div = build_statement_page(
+        page_id="dre-page",
+        title="Demonstração do Resultado do Exercício (DRE)",
+        subtitle="Acompanhe a performance financeira e os resultados operacionais.",
+        table_title="Tabela DRE",
+        table_id="tabela-dre-dinamica",
+        filtro_ano_id="dre-filtro-ano",
+        filtro_cenario_id="dre-filtro-cenario",
+        melhores_anos_metrica_id="grafico-melhores-anos-metrica",
+        melhores_anos_graph_id="grafico-melhores-anos-cenarios",
+        melhores_anos_options=[
+            {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
+            {"label": "EBITDA", "value": "DRE EBITDA"},
         ],
+        top10_ano_id="grafico-filtro-ano",
+        top10_metrica_id="grafico-filtro-metrica",
+        top10_graph_id="grafico-top10-cenarios",
+        top10_options=[
+            {"label": "Resultado Líquido", "value": "DRE Resultado Liquido"},
+            {"label": "EBITDA", "value": "DRE EBITDA"},
+        ],
+        years=years,
+        scenarios=scenarios,
     )
 
-    dfc_div = html.Div(
-        id="dfc-page",
-        className="dfc-page",
-        style={"display": "none"},
-        children=[
-            html.Div(
-                [
-                    html.H1("Demonstrativo do Fluxo de Caixa (DFC)"),
-                    html.Div(
-                        [
-                            html.Label("Cenário", htmlFor="dfc-scenario"),
-                            dcc.Dropdown(
-                                id="dfc-scenario",
-                                options=[
-                                    {"label": f"Cenário {index}", "value": scenario}
-                                    for index, scenario in enumerate(scenarios, start=1)
-                                ],
-                                value=scenarios[0],
-                                clearable=False,
-                                searchable=True,
-                            ),
-                        ],
-                        className="dfc-scenario",
-                    ),
-                    html.Div(
-                        build_dfc_table(data, years, scenarios[0]),
-                        id="dfc-table-content",
-                        className="dfc-table-wrap",
-                    ),
-                ],
-                className="dfc-content",
-            ),
-        ],
+    dfc_div = build_dfc_page(
+        page_id="dfc-page",
+        title="Demonstração dos Fluxos de Caixa (DFC)",
+        subtitle="Visualize a movimentação financeira por ano e cenário simulado.",
+        years=years,
+        scenarios=scenarios,
+        data=data,
     )
 
     return html.Div(
