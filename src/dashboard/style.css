@@ -11,14 +11,13 @@
   --fill: #f2f2f2;
   --fill-hover: #e9e9e9;
   --plum: #501839;
+  --plum-weak: #f1d6e6;
   --sky: #55a9e8;
   --blue: #0284c7;
   --sky-weak: #c5e6ff;
   --light-blue: #cee7f6;
   --dark-blue: #0f172a;
   
-
-
   /* Layout */
   --navbar-height: 48px;
   --sidebar-width: 360px;
@@ -47,14 +46,7 @@ body {
   margin: 0;
   background: #ffffff;
   font-size: 1rem;
-  line-height: 1.2;
-}
-
-/* Text selection */
-
-::selection {
-  background: var(--plum);
-  color: #ffffff;
+  line-height: 1.3;
 }
 
 /* Scrollbars */
@@ -169,14 +161,6 @@ body {
   margin: 0;
   letter-spacing: -0.02em;
 }
-/* Efeito de destaque ao passar o mouse sobre cada linha da tabela */
-#tabela-dre-dinamica .dash-spreadsheet-inner tr:hover td {
-    transform: scale(1.01);
-    transition: transform 0.20s ease-in-out, background-color 0.15s ease-in-out;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    z-index: 1;
-    position: relative;
-}
 
 /* Unified statement page wrapper: DRE and DFC share the same base layout rule */
 .dre-page,
@@ -208,7 +192,7 @@ body {
 }
 
 .dash-dropdown {
-  border: 1px solid var(--ink);
+  border: 1px solid var(--line-strong);
 }
 
 .dash-options-list-option:not(:has(input[disabled])):hover,
@@ -400,8 +384,8 @@ body {
 */
 
 .section {
-  padding-top: 48px;
-  margin-top: 48px;
+  padding-top: 72px;
+  margin-top: 72px;
   border-top: 1px solid var(--line);
 }
 
@@ -420,7 +404,6 @@ body {
 }
 
 .section-subtitle {
-  max-width: 68ch;
   margin: 0 0 28px;
   color: var(--ink-weak);
   text-wrap: balance;
@@ -441,6 +424,7 @@ body {
   padding: 18px 20px 20px;
   background: var(--sky-weak);
   border-radius: var(--radius);
+  border: 1px solid var(--sky);
 }
 
 .metric-label {
@@ -493,11 +477,13 @@ body {
 }
 
 .insight-alert {
-  border-top-color: var(--plum);
+  border-color: var(--plum);
+  background: var(--plum-weak);
 }
 
 .insight-positive {
   border-color: var(--sky);
+  background: var(--sky-weak);
 }
 
 /*
@@ -570,13 +556,8 @@ body {
 }
 
 .brand {
-  font-size: 1.4rem;
-  font-weight: 500;
-}
-
-.brand-caption {
-  margin-top: 14px;
-  color: var(--ink-weak);
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
 /*
@@ -591,11 +572,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px 18px;
   font-weight: 500;
   cursor: pointer;
   list-style: none;
   user-select: none;
+  color: var(--ink-weak);
 }
 
 .panel > summary::-webkit-details-marker {
@@ -626,7 +608,7 @@ body {
 
 .panel-body {
   height: fit-content;
-  padding: 0 20px 20px;
+  padding: 0 16px 18px;
 }
 
 .panel[open] > .panel-body {
@@ -637,6 +619,7 @@ body {
   margin: 14px 0 0;
   font-size: 1rem;
   color: var(--ink-weak);
+  text-wrap: balance;
 }
 
 @keyframes panel-reveal {
@@ -752,7 +735,7 @@ body {
 
 .segment.tab--selected {
   border: 1px solid var(--ink);
-  border-top: 1px solid var(--ink) !important;
+  border: 1px solid var(--ink) !important;
 }
 
 /*
@@ -800,7 +783,7 @@ body {
 }
 
 .rc-slider-tooltip-arrow {
-  border-top-color: var(--ink) !important;
+  border-color: var(--ink) !important;
   border-bottom-color: var(--ink) !important;
 }
 
@@ -811,7 +794,7 @@ body {
 .meta-list {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 8px 16px;
+  gap: 8px 20px;
   margin: 0;
   font-size: 0.85rem;
 }
@@ -830,12 +813,14 @@ body {
 */
 
 .notice,
-.empty-state {
+.empty-state,
+.chart-description {
   margin-top: 20px;
-  padding: 14px 16px;
+  padding: 14px 18px;
   background: var(--fill);
   border-radius: var(--radius);
-  color: var(--ink-weak);
+  border: 1px solid var(--line);
+  color: var(--ink);
 }
 
 .empty-state {
@@ -890,7 +875,7 @@ body {
     position: static;
     width: 100%;
     height: auto;
-    border-top: 1px solid var(--line);
+    border: 1px solid var(--line);
     border-left: none;
   }
 
