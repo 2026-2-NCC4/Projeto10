@@ -1,5 +1,12 @@
 from dash import html
-from ui_elements import page, section, chart, money
+from ui_elements import page, section, chart
+from metrics_kpi.chart_descriptions import (
+    get_trend_description,
+    get_value_cash_description,
+    get_risk_description,
+    get_distribution_description,
+)
+
 
 def render_management_view(
     index_fig,
@@ -12,54 +19,57 @@ def render_management_view(
     risk_fig,
     terminal_children,
     distribution,
+    latest_year=1,
+    prev=None,
+    risk=None,
+    selected_metric="margem_ebitda",
+    metric_labels=None,
 ):
-    
-    ebitda_val = latest.ebitda.median() if 'ebitda' in latest.columns else 0
-    caixa_val = latest.geracao_caixa.median() if 'geracao_caixa' in latest.columns else 0
-    
-    status_ebitda = "positivo" if ebitda_val > 0 else "negativo"
-    status_caixa = "positiva" if caixa_val > 0 else "deficiente"
-    
-    desc_trend = f"Evolução Operacional: No ano selecionado, a operação consolida um EBITDA {status_ebitda} de {money(ebitda_val)}."
-    desc_value = f"Gestão de Caixa: A operação apresenta uma geração de caixa {status_caixa} de {money(caixa_val)} na mediana."
-    desc_risk = "Mapeamento de Riscos: Frequência de cenários onde a concessão apresenta déficit operacional ou quebra de liquidez."
-    desc_dist = "Dispersão Operacional: Amplitude de variação do indicador escolhido frente às incertezas da simulação."
+    """Renderiza a perspectiva de Gestão Executiva com descrições dinâmicas aprofundadas."""
+    metric_labels = metric_labels or {}
 
-  
+    desc_trend = get_trend_description(latest, prev, latest_year)
+    desc_value = get_value_cash_description(latest, prev, latest_year)
+    desc_risk = get_risk_description(latest, risk, latest_year, perspective="gestao")
+    desc_dist = get_distribution_description(
+        latest, selected_metric, metric_labels, latest_year, perspective="gestao"
+    )
+
     return page(
         index_fig,
         subtitle,
         [
             section(
                 "Resumo operacional",
-                "Receita, resultado e caixa no último ano do recorte.",
+                "Visão consolidada do desempenho econômico-financeiro no exercício selecionado. "
+                "Apresenta faturamento bruto, margem operacional, lucro líquido, geração de caixa e perfil da dívida "
+                "para avaliar a sustentabilidade do negócio e orientar decisões executivas de curto e médio prazo.",
                 [html.Div(tiles1, className="metrics-grid")],
             ),
             section(
                 "Leituras para gestão",
-                "Sinais que conectam desempenho, margem e risco de execução no recorte selecionado.",
+                "Diagnóstico executivo automatizado que cruza tração de receitas, eficiência operacional e risco de liquidez. "
+                "Identifica desvios frente ao ciclo anterior e aponta sinais de alerta fundamentais para respaldar intervenções táticas da diretoria.",
                 [html.Div(management_insights, className="insights-grid")],
             ),
             section(
                 "Acompanhamento da operação",
-                "Evolução de receita, EBITDA e riscos que exigem ação de gestão.",
+                "Monitoramento evolutivo e probabilístico da concessão ao longo dos anos. "
+                "Compara a trajetória de expansão e margens operacionais (Receita e EBITDA), o confronto entre liquidez e criação de valor econômico (EVA), "
+                "e o mapeamento estocástico de riscos críticos de solvência e resultado.",
                 [
                     html.Div(
                         [
-                            html.Div([
-                                chart(trend),
-                                html.P(desc_trend, className="chart-description")
-                            ], className="chart-wrapper"),
-                            
-                            html.Div([
-                                chart(value_fig),
-                                html.P(desc_value, className="chart-description")
-                            ], className="chart-wrapper"),
-                            
-                            html.Div([
-                                chart(risk_fig),
-                                html.P(desc_risk, className="chart-description")
-                            ], className="chart-wrapper"),
+                            html.Div(
+                                [chart(trend), desc_trend], className="chart-wrapper"
+                            ),
+                            html.Div(
+                                [chart(value_fig), desc_value],
+                                className="chart-wrapper",
+                            ),
+                            html.Div(
+                                [chart(risk_fig), desc_risk], className="chart-wrapper"
+                            ),
                         ],
                         className="chart-grid",
                     )
@@ -68,12 +78,14 @@ def render_management_view(
             *terminal_children,
             section(
                 "Distribuição de cenários",
-                "Dispersão do indicador operacional selecionado por ano.",
+                "Análise estocástica de sensibilidade e dispersão baseada nas iterações de Monte Carlo. "
+                "Mapeia a densidade de probabilidades, a amplitude do intervalo interquartil (Q1–Q3) e os cenários de cauda (P10 e P90) "
+                "do indicador selecionado, permitindo quantificar o grau de incerteza operacional.",
                 [
-                    html.Div([
-                        chart(distribution),
-                        html.P(desc_dist, className="chart-description")
-                    ], className="chart-wrapper")
+                    html.Div(
+                        [chart(distribution), desc_dist],
+                        className="chart-wrapper",
+                    )
                 ],
             ),
         ],

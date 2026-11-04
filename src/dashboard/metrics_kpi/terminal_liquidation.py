@@ -22,7 +22,9 @@ def build_terminal_liquidation_section(filtered):
         terminal_children = [
             section(
                 "Liquidação contratual",
-                "Ano 12 · encerramento planejado separado da operação recorrente.",
+                "Prestação de contas do encerramento contratual e liquidação financeira no Ano 12 da concessão. "
+                "Segrega a apuração extraordinária de reversão de ativos, quitação final de obrigações e desmobilização "
+                "patrimonial da trajetória operacional recorrente do projeto.",
                 [
                     html.Div(terminal_tiles, className="metrics-grid"),
                     html.P(

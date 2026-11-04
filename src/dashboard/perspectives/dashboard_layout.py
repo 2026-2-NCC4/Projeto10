@@ -1,4 +1,3 @@
-# src/dashboard/perspectives/dashboard_layout.py
 from dash import html, dcc, dash_table
 from ui_elements import row, panel
 
@@ -406,7 +405,7 @@ def build_dfc_page(
                     clearable=False,
                     searchable=True,
                 ),
-                width="400px",
+                width="260px",
             ),
         ],
     )
@@ -498,13 +497,7 @@ def create_main_layout(
                 children=[
                     # Logótipo e título
                     html.Div(
-                        [
-                            html.Div("Nour", className="brand"),
-                            html.Div(
-                                "CTI Global | Concessão 2027–2038",
-                                className="brand-caption",
-                            ),
-                        ],
+                        [html.Div("Nour", className="brand")],
                         className="brand-lockup",
                     ),
                     # Painel 1: Perspetivas
@@ -620,7 +613,7 @@ def create_main_layout(
     dre_div = build_statement_page(
         page_id="dre-page",
         title="Demonstração do Resultado do Exercício (DRE)",
-        subtitle="Acompanhe a performance financeira e os resultados operacionais.",
+        subtitle="Estrutura contábil da formação do resultado econômico. Detalha receitas, deduções, custos operacionais, despesas e tributos para mensurar a lucratividade líquida e o EBITDA da concessão.",
         table_title="Tabela DRE",
         table_id="tabela-dre-dinamica",
         filtro_ano_id="dre-filtro-ano",
@@ -645,7 +638,7 @@ def create_main_layout(
     dfc_div = build_dfc_page(
         page_id="dfc-page",
         title="Demonstração dos Fluxos de Caixa (DFC)",
-        subtitle="Visualize a movimentação financeira por ano e cenário simulado.",
+        subtitle="Mapeamento direto das entradas e saídas financeiras da concessão. Demonstra a geração de caixa operacional, dispêndios de Capex, serviço da dívida e saldo disponível para acionistas.",
         years=years,
         scenarios=scenarios,
         data=data,

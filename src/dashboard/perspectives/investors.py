@@ -1,5 +1,11 @@
 from dash import html
 from ui_elements import page, section, card, chart, money, percent
+from metrics_kpi.chart_descriptions import (
+    get_scatter_description,
+    get_value_cash_description,
+    get_balance_description,
+    get_distribution_description,
+)
 
 
 def render_investor_view(
@@ -13,7 +19,15 @@ def render_investor_view(
     balance_fig,
     terminal_children,
     distribution,
+    latest_year=1,
+    prev=None,
+    risk=None,
+    selected_metric="margem_ebitda",
+    metric_labels=None,
 ):
+    """Renderiza a perspectiva de Investidores / Acionistas com descrições dinâmicas aprofundadas."""
+    metric_labels = metric_labels or {}
+
     investor_tiles = [
         card("EBITDA", money(latest.ebitda.median()), delta("ebitda")),
         card(
@@ -30,25 +44,12 @@ def render_investor_view(
         card("EVA", money(latest.eva.median()), delta("eva")),
     ]
 
-    eva_val = latest.eva.median()
-    caixa_val = latest.geracao_caixa.median()
-    res_liq_val = latest.resultado_liquido.median()
-
-    margem_val = (
-        latest.margem_ebitda.median() if "margem_ebitda" in latest.columns else 0
+    desc_scatter = get_scatter_description(latest, latest_year)
+    desc_value = get_value_cash_description(latest, prev, latest_year)
+    desc_balance = get_balance_description(latest, latest_year)
+    desc_dist = get_distribution_description(
+        latest, selected_metric, metric_labels, latest_year, perspective="investidores"
     )
-    endiv_val = (
-        latest.endividamento.median() if "endividamento" in latest.columns else 0
-    )
-
-    status_eva = "criação" if eva_val > 0 else "destruição"
-    status_caixa = "positiva" if caixa_val > 0 else "negativa"
-    status_lucro = "lucro" if res_liq_val > 0 else "prejuízo"
-
-    desc_scatter = f"Risco-Retorno: Com margem EBITDA mediana de {percent(margem_val)}, a operação projeta {status_eva} de valor ({money(eva_val)})."
-    desc_value = f"Trajetória de Caixa: A geração de caixa {status_caixa} de {money(caixa_val)} sustenta a projeção de valor livre."
-    desc_balance = f"Estrutura de Capital: O nível de endividamento da concessão atinge {percent(endiv_val)} no ano atual."
-    desc_dist = f"Dispersão de Risco: Ao longo dos cenários, a tendência central consolida um {status_lucro} de {money(res_liq_val)}."
 
     return page(
         index_fig,
@@ -56,38 +57,44 @@ def render_investor_view(
         [
             section(
                 "Retorno ao investidor",
-                "Resultado, caixa e criação de valor no último ano do recorte.",
+                "Painel consolidado de rentabilidade e criação de riqueza aos acionistas no encerramento do exercício. "
+                "Apresenta o resultado operacional (EBITDA), lucro líquido final, fluxo de caixa gerado, "
+                "Retorno sobre o Patrimônio Líquido (ROE) e Valor Econômico Agregado (EVA) para avaliar a atratividade do capital investido.",
                 [html.Div(investor_tiles, className="metrics-grid")],
             ),
             section(
                 "Leituras para decisão de investimento",
-                "O retorno é apresentado com sua incerteza; os textos acompanham o recorte de anos e cenários aplicado.",
+                "Teses analíticas de valuation e retorno ajustado ao risco das projeções. "
+                "Avalia a consistência da agregação de valor econômico acima do custo de oportunidade do capital (WACC), "
+                "a sustentabilidade de dividendos e a assimetria estatística entre os cenários simulados.",
                 [html.Div(investor_insights, className="insights-grid")],
             ),
             section(
                 "Valor e potencial de retorno",
-                "Relação entre rentabilidade, criação de valor, caixa e estrutura de capital.",
+                "Modelagem integrada de precificação e risco financeiro para patrocinadores. "
+                "Cruza a eficiência operacional com a criação de valor por cenário (Margem EBITDA x EVA), "
+                "a evolução temporal do caixa livre frente ao EVA, e a decomposição da estrutura patrimonial entre ativos, dívidas e patrimônio líquido.",
                 [
                     html.Div(
                         [
                             html.Div(
                                 [
                                     chart(scatter),
-                                    html.P(desc_scatter, className="chart-description"),
+                                    desc_scatter,
                                 ],
                                 className="chart-wrapper",
                             ),
                             html.Div(
                                 [
                                     chart(value_fig),
-                                    html.P(desc_value, className="chart-description"),
+                                    desc_value,
                                 ],
                                 className="chart-wrapper",
                             ),
                             html.Div(
                                 [
                                     chart(balance_fig),
-                                    html.P(desc_balance, className="chart-description"),
+                                    desc_balance,
                                 ],
                                 className="chart-wrapper",
                             ),
@@ -99,12 +106,14 @@ def render_investor_view(
             *terminal_children,
             section(
                 "Distribuição de cenários",
-                "Amplitude dos retornos e indicadores observados nos cenários selecionados.",
+                "Análise probabilística de sensibilidade dos retornos aos acionistas. "
+                "Mapeia a densidade de probabilidades, a concentração nos percentis centrais (Q1–Q3) e as caudas de risco (P10–P90) "
+                "da métrica selecionada, quantificando o prêmio de risco do ativo e a probabilidade de perda patrimonial.",
                 [
                     html.Div(
                         [
                             chart(distribution),
-                            html.P(desc_dist, className="chart-description"),
+                            desc_dist,
                         ],
                         className="chart-wrapper",
                     )
