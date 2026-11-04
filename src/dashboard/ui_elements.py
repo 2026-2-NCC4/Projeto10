@@ -114,15 +114,17 @@ def insight(title, text, tone="neutral"):
     )
 
 
-def section(title, subtitle, children):
+def section(title, subtitle, children, footer_desc=None):
     """Build a semantic content section with header and responsive content container."""
-    return html.Section(
-        [
-            html.Div([html.H2(title), html.P(subtitle, className="section-subtitle")]),
-            *children,
-        ],
-        className="section",
-    )
+    elements = [
+        html.Div([html.H2(title), html.P(subtitle, className="section-subtitle")]),
+        *children,
+    ]
+    
+    if footer_desc:
+        elements.append(html.P(footer_desc, className="section-description"))
+    
+    return html.Section(elements, className="section")
 
 
 def chart(figure, class_name="chart-card"):

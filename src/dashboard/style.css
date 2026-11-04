@@ -842,6 +842,20 @@ body {
   margin: 20px;
 }
 
+.chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; 
+    height: 100%;
+}
+
+.section-description {
+    margin-top: 16px;      
+    font-size: 0.9rem;      
+    color: #3a3939;       
+    text-align: center;  
+    font-style: normal;   
+}
 /*
    16. Responsive Layout
 */
