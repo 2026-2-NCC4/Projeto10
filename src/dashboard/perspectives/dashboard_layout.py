@@ -112,6 +112,7 @@ SECTION_TITLE_STYLE = {
     "color": "#0f172a",
     "fontSize": "16px",
     "marginBottom": "16px",
+    "fontWeight": "bold",
 }
 
 FILTER_LABEL_STYLE = {
@@ -648,6 +649,7 @@ def create_main_layout(
         className="app-container",
         children=[
             dcc.Location(id="url", refresh=False),
+            dcc.Store(id="simplified-view-active-store"),
             navbar,
             dashboard_div,
             dre_div,

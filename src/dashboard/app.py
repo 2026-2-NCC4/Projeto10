@@ -420,6 +420,22 @@ def render(years, scenarios, selected_metric, perspective):
         ]
 
 
+app.clientside_callback(
+    """
+    function(value) {
+        var isSimplified = Array.isArray(value) && value.length > 0;
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.classList.toggle('simplified-view-active', isSimplified);
+        }
+        return isSimplified;
+    }
+    """,
+    Output("simplified-view-active-store", "data"),
+    Input("toggle-simplified-view", "value"),
+    prevent_initial_call=False,
+)
+
+
 @app.callback(
     Output("dfc-table-content", "children"),
     Input("dfc-scenario", "value"),
@@ -700,7 +716,7 @@ def atualizar_grafico_melhores_anos(metrica_escolhida):
         margin=dict(t=40, b=20, l=20, r=20),
         barcornerradius=4,
     )
-    fig.update_traces(marker_color="#0284c7")
+    fig.update_traces(marker_color="#63aee7")
 
     return fig
 
@@ -761,9 +777,9 @@ def atualizar_grafico_top10(ano_selecionado, metrica_escolhida):
 
     # Estilização visual mantendo as cores e marcadores circulares
     fig.update_traces(
-        line_color="#0284c7",
+        line_color="#63aee7",
         line_width=3,
-        marker=dict(size=10, color="#0284c7", symbol="circle"),
+        marker=dict(size=10, color="#7ab6e4", symbol="circle"),
         textposition="top center",
     )
 

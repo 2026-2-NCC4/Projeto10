@@ -138,7 +138,7 @@ def chart(figure, class_name="chart-card"):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font={"family": FONT_STACK, "color": COLORS["ink"], "size": 12},
-        title_font={"size": 15, "color": COLORS["ink"]},
+        title_font={"size": 15, "color": COLORS["ink"], "weight": "bold"},
         margin={"l": 48, "r": 20, "t": 56, "b": 44},
         legend_title_text="",
         legend={"font": {"size": 12}},
@@ -156,7 +156,7 @@ def chart(figure, class_name="chart-card"):
 # PAGE LAYOUT HELPER
 # ----------------------------------------------------------------------
 def page(index_fig, subtitle, sections):
-    """Assemble a full dashboard “page".
+    """Assemble a full dashboard page.
 
     Parameters
     ----------
@@ -167,10 +167,32 @@ def page(index_fig, subtitle, sections):
     sections : list[Component]
         List of section components that make up the page content.
     """
-    # Hero container: title above the chart, with shared styling
+    # Hero container: title and simplified view toggle above the chart
     hero = html.Div(
         [
-            html.H2(subtitle, className="hero-title"),
+            html.Div(
+                [
+                    html.H2(subtitle, className="hero-title"),
+                    html.Div(
+                        dcc.Checklist(
+                            id="toggle-simplified-view",
+                            options=[
+                                {
+                                    "label": "Visão simplificada",
+                                    "value": "simplified",
+                                }
+                            ],
+                            value=[],
+                            persistence=True,
+                            persistence_type="session",
+                            className="simplified-view-toggle",
+                        ),
+                        className="hero-toggle-container",
+                        title="Ocultar subtítulos e descrições dos gráficos para uma visualização simplificada",
+                    ),
+                ],
+                className="hero-header",
+            ),
             chart(index_fig, class_name="hero-graph"),
         ],
         className="hero-figure",
@@ -178,55 +200,6 @@ def page(index_fig, subtitle, sections):
     return html.Div(
         [
             hero,
-            html.Div(sections, className="page-content"),
-        ],
-        className="page",
-    )
-    """Assemble a full dashboard “page".
-
-    Parameters
-    ----------
-    index_fig : plotly.graph_objects.Figure
-        The hero/radial figure to display at the top of the page.
-    subtitle : str
-        Subtitle text displayed under the hero figure.
-    sections : list[Component]
-        List of section components that make up the page content.
-    """
-    # Wrap the Plotly figure in a Graph component with the same styling as other charts
-    hero = chart(index_fig, class_name="hero-figure")
-    return html.Div(
-        [
-            hero,
-            html.H2(subtitle, className="page-subtitle"),
-            html.Div(sections, className="page-content"),
-        ],
-        className="page",
-    )
-    """
-    Assemble a full dashboard “page”.
-
-    Parameters
-    ----------
-    index_fig : dash component
-        The hero/radial figure shown at the top of the page.
-    subtitle : str
-        A short description displayed under the hero figure.
-    sections : list[dash component]
-        The body of the page – typically a list of ``section`` components.
-
-    Returns
-    -------
-    html.Div
-        A container ready to be injected into ``dashboard-content``.
-    """
-    return html.Div(
-        [
-            # Hero / radial KPI figure
-            html.Div(index_fig, className="hero-figure"),
-            # Subtitle text
-            html.H2(subtitle, className="page-subtitle"),
-            # The actual content sections
             html.Div(sections, className="page-content"),
         ],
         className="page",
