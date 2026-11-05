@@ -96,7 +96,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # Web framework and interactive components
-from dash import Dash, Input, Output, dcc, html
+from dash import Dash, Input, Output, dcc, html, no_update
 
 # Local helper for custom polar petal geometry (Bezier curve coordinates)
 from petals import petal
@@ -135,7 +135,7 @@ from metrics_kpi.terminal_liquidation import build_terminal_liquidation_section
 from perspectives.technical import render_technical_view
 from perspectives.investors import render_investor_view
 from perspectives.management import render_management_view
-from perspectives.dashboard_layout import build_dfc_table, create_main_layout
+from perspectives.dashboard_layout import build_dfc_table, build_dre_table, create_main_layout
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
@@ -437,6 +437,17 @@ app.clientside_callback(
 
 
 @app.callback(
+    Output("dfc-years", "value"),
+    Input("dfc-years-clear-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def limpar_anos_dfc(n_clicks):
+    if n_clicks and len(YEARS) > 0:
+        return [min(YEARS)]
+    return no_update
+
+
+@app.callback(
     Output("dfc-table-content", "children"),
     Input("dfc-scenario", "value"),
     Input("dfc-years", "value"),
@@ -539,7 +550,7 @@ def atualizar_options_cenario_dre(ano_selecionado):
 
 
 @app.callback(
-    Output("tabela-dre-dinamica", "data"),
+    Output("tabela-dre-dinamica", "children"),
     Input("dre-filtro-ano", "value"),
     Input("dre-filtro-cenario", "value"),
 )
@@ -564,7 +575,7 @@ def atualizar_tabela_dre(anos, cenarios):
         df_filtrado = df_filtrado[df_filtrado[col_cenario].isin(lista_cenarios)]
 
     if df_filtrado.empty:
-        return []
+        return build_dre_table([])
 
     linha = df_filtrado.median(numeric_only=True)
 
@@ -653,7 +664,7 @@ def atualizar_tabela_dre(anos, cenarios):
         },
     ]
 
-    return dre_vertical
+    return build_dre_table(dre_vertical)
 
 
 @app.callback(

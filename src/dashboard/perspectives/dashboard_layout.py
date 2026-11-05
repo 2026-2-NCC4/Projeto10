@@ -107,7 +107,6 @@ STATEMENT_CARD_STYLE = {
     "borderRadius": "8px",
     "border": "1px solid #e2e8f0",
     "padding": "20px",
-    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
 }
 
 SECTION_TITLE_STYLE = {
@@ -137,7 +136,7 @@ STATEMENT_TABLE_CONFIG = {
         "color": "var(--ink)",
         "border": "none",
         "borderBottom": "1px solid #f1f5f9",
-        "padding": "14px 16px",
+        "padding": "14px",
         "fontFamily": "sans-serif",
     },
     "style_cell_conditional": [
@@ -211,13 +210,51 @@ def build_statement_card(title: str, children: list, title_color: str = None):
     )
 
 
-def build_statement_table(table_id: str):
-    """Cria a DataTable padronizada de demonstrativo financeiro."""
-    return dash_table.DataTable(
-        id=table_id,
-        data=[],
-        **STATEMENT_TABLE_CONFIG,
+def build_dre_table(dre_data):
+    """Constrói a tabela DRE utilizando as mesmas classes CSS e visual da DFC (.dfc-table)."""
+    return html.Table(
+        [
+            html.Thead(
+                html.Tr(
+                    [
+                        html.Th("", scope="col", style={"width": "48px", "textAlign": "center"}),
+                        html.Th("Descrição da Conta", scope="col"),
+                        html.Th("Valor Consolidado", scope="col", style={"textAlign": "right"}),
+                    ]
+                )
+            ),
+            html.Tbody(
+                [
+                    html.Tr(
+                        [
+                            html.Td(
+                                row.get("sinal", ""),
+                                style={
+                                    "textAlign": "center",
+                                    "fontWeight": "bold",
+                                    "color": "#94a3b8",
+                                },
+                            ),
+                            html.Th(row.get("conta", ""), scope="row"),
+                            html.Td(row.get("valor", ""), style={"textAlign": "right"}),
+                        ],
+                        className=(
+                            "dfc-total"
+                            if row.get("sinal") == "=" or row.get("conta") == "EBITDA"
+                            else ""
+                        ),
+                    )
+                    for row in dre_data
+                ]
+            ),
+        ],
+        className="dfc-table",
     )
+
+
+def build_statement_table(table_id: str):
+    """Cria o container para a tabela DRE estilizada como a DFC."""
+    return html.Div(id=table_id, className="dfc-table-wrap")
 
 
 def build_statement_page(
@@ -365,17 +402,44 @@ def build_dfc_page(
             "flexWrap": "wrap",
         },
         children=[
-            build_statement_filter_field(
-                "Ano(s)",
-                dcc.Dropdown(
-                    id="dfc-years",
-                    options=[{"label": f"Ano {year}", "value": year} for year in years],
-                    value=list(years),
-                    multi=True,
-                    clearable=False,
-                    searchable=True,
-                ),
-                width="218px",
+            html.Div(
+                style={"display": "flex", "flexDirection": "column", "width": "218px"},
+                children=[
+                    html.Div(
+                        style={
+                            "display": "flex",
+                            "justifyContent": "space-between",
+                            "alignItems": "center",
+                            "marginBottom": "4px",
+                        },
+                        children=[
+                            html.Label("Ano(s)", style={**FILTER_LABEL_STYLE, "marginBottom": "0"}),
+                            html.Button(
+                                "Limpar",
+                                id="dfc-years-clear-btn",
+                                n_clicks=0,
+                                style={
+                                    "background": "none",
+                                    "border": "none",
+                                    "color": "#64748b",
+                                    "fontSize": "11px",
+                                    "fontWeight": "600",
+                                    "cursor": "pointer",
+                                    "padding": "0 2px",
+                                    "textDecoration": "underline",
+                                },
+                            ),
+                        ],
+                    ),
+                    dcc.Dropdown(
+                        id="dfc-years",
+                        options=[{"label": f"Ano {year}", "value": year} for year in years],
+                        value=list(years),
+                        multi=True,
+                        clearable=False,
+                        searchable=True,
+                    ),
+                ],
             ),
             build_statement_filter_field(
                 "Cenário",

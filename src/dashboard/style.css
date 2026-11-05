@@ -241,9 +241,9 @@ body {
   font-weight: 600;
 }
 
-.dfc-table th:first-child,
+.dfc-table th,
 .dfc-table td {
-  text-align: left;
+  text-align: left !important;
 }
 
 .dfc-table tbody tr:last-child th,
