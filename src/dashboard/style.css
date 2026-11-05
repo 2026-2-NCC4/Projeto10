@@ -200,6 +200,20 @@ body {
   color: var(--ink);
 }
 
+.cell-table {
+  border-radius: var(--radius) !important;
+  border: 1px solid transparent !important;
+  overflow: hidden;
+}
+
+.dash-cell {
+  border: 1px solid var(--line) !important;
+}
+
+.dash-cell.cell--selected.focused {
+  background-color: #ffffff !important;
+}
+
 .dfc-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);

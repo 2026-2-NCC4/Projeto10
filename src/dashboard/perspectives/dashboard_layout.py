@@ -154,7 +154,6 @@ STATEMENT_TABLE_CONFIG = {
             "if": {"column_id": "valor"},
             "textAlign": "right",
             "width": "250px",
-            "fontFamily": "monospace",
         },
     ],
     "style_header": {
@@ -166,17 +165,17 @@ STATEMENT_TABLE_CONFIG = {
     },
     "style_data_conditional": [
         {
-            "if": {"filter_query": '{sinal} = "="'},
-            "backgroundColor": "var(--light-blue)",
-            "color": "#00395F",
-        },
-        {
             "if": {
                 "filter_query": '{valor} contains "-"',
                 "column_id": "valor",
             },
-            "color": "#dc2626",
+            "color": "var(--plum)",
             "fontWeight": "normal",
+        },
+        {
+            "if": {"filter_query": '{sinal} = "="'},
+            "backgroundColor": "var(--fill)",
+            "color": "var(--ink)",
         },
     ],
 }
@@ -284,23 +283,6 @@ def build_statement_page(
         [table_filters, build_statement_table(table_id)],
     )
 
-    chart1_filter = build_statement_filter_field(
-        "Métrica de Análise",
-        dcc.Dropdown(
-            id=melhores_anos_metrica_id,
-            options=melhores_anos_options,
-            value=melhores_anos_options[0]["value"] if melhores_anos_options else None,
-            clearable=False,
-        ),
-        width="240px",
-        margin_bottom="16px",
-    )
-
-    chart1_card = build_statement_card(
-        "Melhores Anos e Cenários",
-        [chart1_filter, dcc.Graph(id=melhores_anos_graph_id)],
-    )
-
     chart2_filters = html.Div(
         style={"display": "flex", "gap": "16px", "marginBottom": "16px"},
         children=[
@@ -346,7 +328,6 @@ def build_statement_page(
                         style=STATEMENT_CONTENT_STYLE,
                         children=[
                             table_card,
-                            chart1_card,
                             chart2_card,
                         ],
                     ),
