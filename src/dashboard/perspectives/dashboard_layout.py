@@ -543,14 +543,24 @@ def create_main_layout(
     )
 
     dashboard_div = html.Div(
-        id="dashboard-page",
-        className="dashboard",
-        children=[
-            # Área principal onde os gráficos e secções dinâmicas são injetados
-            html.Main(
-                className="main",
-                children=[html.Div(id="dashboard-content", className="content")],
-            ),
+    id="dashboard-page",
+    className="dashboard",
+    children=[
+        # Área principal onde os gráficos e secções dinâmicas são injetados
+        html.Main(
+            className="main",
+            children=[
+                html.Div(
+                    id="dashboard-content", 
+                    className="content",
+                    style={
+                        "padding": "24px", # Cria o "gap" ao redor dos gráficos
+                        "width": "100%",
+                        "boxSizing": "border-box"
+                    }
+                )
+            ],
+        ),
             # Barra lateral de filtros e metadados
             html.Aside(
                 className="sidebar",

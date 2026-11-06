@@ -17,6 +17,7 @@
   --sky-weak: #c5e6ff;
   --light-blue: #cee7f6;
   --dark-blue: #0f172a;
+  --orange:#fce3d2;
 
   /* Layout */
   --navbar-height: 48px;
@@ -47,6 +48,14 @@ body {
   background: #ffffff;
   font-size: 0.95rem;
   line-height: 1.3;
+}
+/* Container que envolve a Main e a Sidebar */
+.dashboard {
+  display: flex;
+  flex-direction: row; /* Coloca lado a lado */
+  width: 100%;
+  min-height: calc(100vh - var(--navbar-height));
+  background-color: #f8fafc; /* Fundo cinza claro para os cards se destacarem */
 }
 
 /* Scrollbars */
@@ -514,8 +523,9 @@ body {
 }
 
 .main {
-  margin-right: var(--sidebar-width);
-  min-height: calc(100vh - var(--navbar-height));
+  flex: 1; /* Ocupa todo o espaço restante */
+  min-width: 0; /* IMPORTANTE: Impede que os gráficos do Plotly "estourem" a tela e escondam a sidebar */
+  transition: all 0.3s ease;
 }
 
 .stack {
@@ -914,18 +924,16 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
 */
 
 .sidebar {
-  position: fixed;
-  top: var(--navbar-height);
-  right: 0;
-  bottom: 0;
-  z-index: 10;
+  position: relative; /* Mudou de fixed para relative para empurrar o conteúdo */
   width: var(--sidebar-width);
+  flex-shrink: 0; /* Não deixa a sidebar amassar */
   overflow-y: auto;
   overscroll-behavior: contain;
   background: #ffffff;
   border-left: 1px solid var(--line);
-
-  /* Dash 4 theme tokens for sidebar controls. */
+  transition: transform 0.3s ease-in-out;
+  
+  /* Tokens mantidos */
   --Dash-Text-Primary: var(--ink);
   --Dash-Text-Strong: var(--ink);
   --Dash-Text-Weak: var(--ink-weak);
