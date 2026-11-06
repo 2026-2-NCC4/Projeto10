@@ -17,7 +17,7 @@
   --sky-weak: #c5e6ff;
   --light-blue: #cee7f6;
   --dark-blue: #0f172a;
-  
+
   /* Layout */
   --navbar-height: 48px;
   --sidebar-width: 330px;
@@ -251,7 +251,8 @@ body {
   background: #ffffff !important;
   border: 1px solid var(--line) !important;
   border-radius: 8px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
   z-index: 1050 !important;
   padding: 6px !important;
   margin-top: 4px !important;
@@ -429,7 +430,8 @@ body {
 .Select-menu-outer {
   border: 1px solid var(--line) !important;
   border-radius: 8px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
   background: #ffffff !important;
   margin-top: 4px !important;
   z-index: 1050 !important;
@@ -725,19 +727,27 @@ body {
 /*
    Simplified View Mode: Hides section-subtitle and chart-description
 */
-body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section-subtitle,
-body:has(.simplified-view-toggle input[type="checkbox"]:checked) .chart-description,
-.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked) .section-subtitle,
-.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked) .chart-description,
-.page:has(.simplified-view-toggle input[type="checkbox"]:checked) .section-subtitle,
-.page:has(.simplified-view-toggle input[type="checkbox"]:checked) .chart-description,
+body:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .section-subtitle,
+body:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .chart-description,
+.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .section-subtitle,
+.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .chart-description,
+.page:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .section-subtitle,
+.page:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .chart-description,
 .simplified-view-active .section-subtitle,
 .simplified-view-active .chart-description {
   display: none !important;
 }
 
 body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
-.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
+.dashboard:has(.simplified-view-toggle input[type="checkbox"]:checked)
+  .section
+  h2,
 .page:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
 .simplified-view-active .section h2 {
   margin-bottom: 24px;
@@ -1090,9 +1100,7 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
   color: var(--ink-weak);
   font-size: 0.95rem;
   font-weight: 500;
-  transition:
-    background-color 150ms ease-in-out,
-    color 150ms ease-in-out;
+  transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
 }
 
 .segment:hover {
@@ -1216,18 +1224,18 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
 }
 
 .chart-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 8px; 
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
 }
 
 .section-description {
-    margin-top: 16px;      
-    font-size: 0.9rem;      
-    color: #3a3939;       
-    text-align: center;  
-    font-style: normal;   
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: #3a3939;
+  text-align: center;
+  font-style: normal;
 }
 /*
    16. Responsive Layout

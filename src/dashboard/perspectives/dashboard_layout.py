@@ -217,9 +217,17 @@ def build_dre_table(dre_data):
             html.Thead(
                 html.Tr(
                     [
-                        html.Th("", scope="col", style={"width": "48px", "textAlign": "center"}),
+                        html.Th(
+                            "",
+                            scope="col",
+                            style={"width": "48px", "textAlign": "center"},
+                        ),
                         html.Th("Descrição da Conta", scope="col"),
-                        html.Th("Valor Consolidado", scope="col", style={"textAlign": "right"}),
+                        html.Th(
+                            "Valor Consolidado",
+                            scope="col",
+                            style={"textAlign": "right"},
+                        ),
                     ]
                 )
             ),
@@ -413,7 +421,10 @@ def build_dfc_page(
                             "marginBottom": "4px",
                         },
                         children=[
-                            html.Label("Ano(s)", style={**FILTER_LABEL_STYLE, "marginBottom": "0"}),
+                            html.Label(
+                                "Ano(s)",
+                                style={**FILTER_LABEL_STYLE, "marginBottom": "0"},
+                            ),
                             html.Button(
                                 "x",
                                 id="dfc-years-clear-btn",
@@ -432,7 +443,9 @@ def build_dfc_page(
                     ),
                     dcc.Dropdown(
                         id="dfc-years",
-                        options=[{"label": f"Ano {year}", "value": year} for year in years],
+                        options=[
+                            {"label": f"Ano {year}", "value": year} for year in years
+                        ],
                         value=list(years),
                         multi=True,
                         clearable=False,

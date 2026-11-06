@@ -3,11 +3,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+
 def pretty_label(col_name: str) -> str:
     """Convert snake_case column names to Title Case with spaces.
     Example: "ano_calendario" -> "Ano Calendário".
     """
-       # Replace underscores with spaces and capitalize each word
+    # Replace underscores with spaces and capitalize each word
     return " ".join(word.capitalize() for word in col_name.split("_"))
 
 
@@ -40,21 +41,23 @@ def create_risk_chart(risk_long, risk_labels):
     if risk_long.empty:
         return go.Figure().update_layout(title="Mapa de risco · probabilidade por ano")
 
-    risk_matrix = risk_long.pivot(index="Evento", columns="ano_calendario", values="Probabilidade")
-    
+    risk_matrix = risk_long.pivot(
+        index="Evento", columns="ano_calendario", values="Probabilidade"
+    )
+
     risk_fig = px.imshow(
         risk_matrix,
-        text_auto=".0%", 
-        color_continuous_scale=["white", "#501839"], 
+        text_auto=".0%",
+        color_continuous_scale=["white", "#501839"],
         title="Mapa de risco · probabilidade por ano",
         aspect="auto",
-        labels=dict(x="Ano calendário", y="", color="Probabilidade")
+        labels=dict(x="Ano calendário", y="", color="Probabilidade"),
     )
-    
+
     # Força a exibição de todos os anos no eixo X e esconde o eixo de cores (já tem texto)
     risk_fig.update_xaxes(type="category")
     risk_fig.update_layout(coloraxis_showscale=False)
-    
+
     return risk_fig
 
 
@@ -87,7 +90,7 @@ def create_value_cash_chart(by_year, colors):
             x=by_year["ano_calendario"],
             y=by_year["geracao_caixa"],
             name="Geração de caixa",
-            marker_color=colors.get("sky", "#55a9e8")
+            marker_color=colors.get("sky", "#55a9e8"),
         ),
         secondary_y=False,
     )
@@ -97,7 +100,7 @@ def create_value_cash_chart(by_year, colors):
             y=by_year["eva"],
             name="EVA",
             mode="lines+markers",
-            line=dict(color=colors.get("plum", "#501839"), width=3)
+            line=dict(color=colors.get("plum", "#501839"), width=3),
         ),
         secondary_y=True,
     )
@@ -106,12 +109,22 @@ def create_value_cash_chart(by_year, colors):
         title="EVA e Geração de caixa",
         plot_bgcolor="white",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
-    
-    value_fig.update_xaxes(title_text="Ano calendário", type="category", showgrid=True, gridcolor="#e5e7eb")
-    value_fig.update_yaxes(tickprefix="R$ ", tickformat="~s", secondary_y=False, showgrid=True, gridcolor="#e5e7eb")
-    value_fig.update_yaxes(tickprefix="R$ ", tickformat="~s", secondary_y=True, showgrid=False)
+
+    value_fig.update_xaxes(
+        title_text="Ano calendário", type="category", showgrid=True, gridcolor="#e5e7eb"
+    )
+    value_fig.update_yaxes(
+        tickprefix="R$ ",
+        tickformat="~s",
+        secondary_y=False,
+        showgrid=True,
+        gridcolor="#e5e7eb",
+    )
+    value_fig.update_yaxes(
+        tickprefix="R$ ", tickformat="~s", secondary_y=True, showgrid=False
+    )
 
     return value_fig
 
@@ -121,27 +134,29 @@ def create_balance_chart(balance, latest_year):
     if balance.empty:
         return go.Figure()
 
-    balance_fig = go.Figure(go.Waterfall(
-        name="Estrutura",
-        orientation="v",
-        measure=["relative"] * len(balance), 
-        x=balance["Componente"],
-        y=balance["Valor"],
-        text=balance["Valor"],
-        textposition="outside",
-        connector={"line": {"color": "#9ca3af"}},
-        increasing={"marker": {"color": "#501839"}}, 
-        decreasing={"marker": {"color": "#55a9e8"}},
-        totals={"marker": {"color": "#7a4b69"}}
-    ))
+    balance_fig = go.Figure(
+        go.Waterfall(
+            name="Estrutura",
+            orientation="v",
+            measure=["relative"] * len(balance),
+            x=balance["Componente"],
+            y=balance["Valor"],
+            text=balance["Valor"],
+            textposition="outside",
+            connector={"line": {"color": "#9ca3af"}},
+            increasing={"marker": {"color": "#501839"}},
+            decreasing={"marker": {"color": "#55a9e8"}},
+            totals={"marker": {"color": "#7a4b69"}},
+        )
+    )
 
     balance_fig.update_layout(
         title=f"Estrutura financeira · Ano {latest_year}",
         showlegend=False,
-        plot_bgcolor="white"
+        plot_bgcolor="white",
     )
     balance_fig.update_traces(texttemplate="R$ %{text:.2s}")
-    
+
     return balance_fig
 
 
@@ -151,8 +166,8 @@ def create_distribution_chart(operating, selected_metric, metric_labels, colors)
         operating,
         x="ano_calendario",
         y=selected_metric,
-        box=True,     
-        points=False, 
+        box=True,
+        points=False,
         title=f"Densidade e distribuição dos cenários · {metric_labels.get(selected_metric, selected_metric)}",
         labels={
             "ano_calendario": "Ano calendário",
@@ -160,10 +175,10 @@ def create_distribution_chart(operating, selected_metric, metric_labels, colors)
         },
         color_discrete_sequence=[colors.get("plum", "#501839")],
     )
-    
+
     distribution.update_layout(plot_bgcolor="white")
     distribution.update_xaxes(type="category", showgrid=True, gridcolor="#e5e7eb")
-    
+
     if selected_metric in {"margem_ebitda", "roa", "roe", "composicao_endividamento"}:
         distribution.update_yaxes(tickformat=".0%", showgrid=True, gridcolor="#e5e7eb")
     else:
