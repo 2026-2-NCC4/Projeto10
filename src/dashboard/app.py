@@ -137,6 +137,7 @@ from perspectives.technical import render_technical_view
 from perspectives.investors import render_investor_view
 from perspectives.management import render_management_view
 from perspectives.dashboard_layout import (
+    build_balanco_table,
     build_dfc_table,
     build_dre_table,
     create_main_layout,
@@ -187,6 +188,8 @@ server = app.server
 @server.route("/dre/")
 @server.route("/dfc")
 @server.route("/dfc/")
+@server.route("/balanco")
+@server.route("/balanco/")
 @server.route("/dashboard")
 @server.route("/dashboard/")
 def serve_spa(*args, **kwargs):
@@ -467,12 +470,39 @@ def render_dfc(scenario, years):
 
 
 @app.callback(
+    Output("balanco-years", "value"),
+    Input("balanco-years-clear-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def limpar_anos_balanco(n_clicks):
+    if n_clicks and len(YEARS) > 0:
+        return [min(YEARS)]
+    return no_update
+
+
+@app.callback(
+    Output("balanco-table-content", "children"),
+    Input("balanco-scenario", "value"),
+    Input("balanco-years", "value"),
+)
+def render_balanco(scenario, years):
+    selected_years = [year for year in YEARS if year in (years or YEARS)]
+    return build_balanco_table(
+        DATA,
+        selected_years,
+        scenario if scenario in SCENARIOS else SCENARIOS[0],
+    )
+
+
+@app.callback(
     Output("dashboard-page", "style"),
     Output("dre-page", "style"),
     Output("dfc-page", "style"),
+    Output("balanco-page", "style"),
     Output("tab-dashboard", "className"),
     Output("tab-dre", "className"),
     Output("tab-dfc", "className"),
+    Output("tab-balanco", "className"),
     Input("url", "pathname"),
 )
 def display_page(pathname):
@@ -486,8 +516,10 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "block"},
             {"display": "none"},
+            {"display": "none"},
             base_tab,
             active_tab,
+            base_tab,
             base_tab,
         )
 
@@ -496,6 +528,20 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "none"},
             {"display": "block"},
+            {"display": "none"},
+            base_tab,
+            base_tab,
+            active_tab,
+            base_tab,
+        )
+
+    elif clean_path == "/balanco":
+        return (
+            {"display": "none"},
+            {"display": "none"},
+            {"display": "none"},
+            {"display": "block"},
+            base_tab,
             base_tab,
             base_tab,
             active_tab,
@@ -505,7 +551,9 @@ def display_page(pathname):
             {},
             {"display": "none"},
             {"display": "none"},
+            {"display": "none"},
             active_tab,
+            base_tab,
             base_tab,
             base_tab,
         )

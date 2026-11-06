@@ -171,9 +171,10 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Unified statement page wrapper (DRE and DFC pages) */
+/* Unified statement page wrapper (DRE, DFC and Balanço pages) */
 .dre-page,
-.dfc-page {
+.dfc-page,
+.balanco-page {
   width: 100%;
   min-height: calc(100vh - var(--navbar-height));
 }

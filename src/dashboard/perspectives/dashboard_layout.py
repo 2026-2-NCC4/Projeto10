@@ -1,4 +1,5 @@
 from dash import html, dcc, dash_table
+import pandas as pd
 from ui_elements import row, panel
 
 DFC_ROWS = (
@@ -19,9 +20,105 @@ DFC_ROWS = (
     ("Saldo Final de Caixa", "FLU Saldo Final"),
 )
 
+BALANCO_ROWS = (
+    ("ATIVO", "BAL Total do Ativo", "total"),
+    ("1. ATIVO CIRCULANTE", None, "section"),
+    ("Caixa e Equivalentes de Caixa", "BAL Disponivel", "item"),
+    (
+        "Contas a Receber (Partes Relacionadas)",
+        "BAL Contas a Receber Partes Relacionadas",
+        "item",
+    ),
+    ("Contas a Receber (Clientes)", "BAL Contas a Receber Clientes", "item"),
+    ("Contas a Receber SWAP", "BAL Contas a Receber SWAP", "item"),
+    ("Estoques", "BAL Estoques Diversos", "item"),
+    ("Outros Créditos / Ativos Circulantes", "BAL Outros Creditos", "item"),
+    ("TOTAL ATIVO CIRCULANTE", "BAL Ativo Circulante", "total"),
+    ("2. ATIVO NÃO CIRCULANTE", None, "section"),
+    ("Outorga da Concessão", "BAL Outorga da Concessao", "item"),
+    ("Realizável a Longo Prazo", "BAL Realizavel a Longo Prazo", "item"),
+    ("At Fiscal Diferido", "BAL At Fiscal Diferido", "item"),
+    ("Créditos Tributários", "BAL Creditos Tributarios", "item"),
+    ("Outros Créditos LP", "BAL Outros Creditos LP", "item"),
+    ("Permanente", "BAL Permanente", "item"),
+    ("Investimentos - Imobilizados", "BAL Investimentos Imobilizado", "item"),
+    ("Investimentos - Intangível", "BAL Investimentos Intangivel", "item"),
+    ("Diferido", "BAL Diferido", "item"),
+    ("Depreciação Acumulada (Conta redutora)", "BAL Depreciacao Acumulada", "item"),
+    (
+        "Amortização - Intangível (Conta redutora)",
+        "BAL Amortizacao Intangivel",
+        "item",
+    ),
+    (
+        "Amortização - Acumulada (Conta redutora)",
+        "BAL Amortizacao Acumulada",
+        "item",
+    ),
+    ("TOTAL ATIVO NÃO CIRCULANTE", "__TOTAL_ATIVO_NAO_CIRCULANTE__", "total"),
+    ("PASSIVO E PATRIMÔNIO LÍQUIDO", "BAL Total do Passivo", "total"),
+    ("1. PASSIVO CIRCULANTE", None, "section"),
+    ("Fornecedores", "BAL Fornecedores", "item"),
+    ("Empréstimos", "BAL Emprestimos", "item"),
+    (
+        "Obrigações Trabalhistas e Sociais",
+        "BAL Encargos Sociais e Trabalhistas",
+        "item",
+    ),
+    ("Tributos a pagar", "BAL Tributos a pagar", "item"),
+    ("Contas a pagar", "BAL Tributos a pagar", "item"),
+    ("Impostos a Recolher", "BAL Impostos", "item"),
+    (
+        "Obrigações com o Poder Concedente",
+        "BAL Obrigacoes com o Poder Concedente",
+        "item",
+    ),
+    ("Outros Débitos", "BAL Outros Debitos", "item"),
+    ("Provisão Manutenção", "BAL Provisao Manutencao", "item"),
+    ("Encargos Sociais e Trabalhistas", "BAL Tributos a pagar", "item"),
+    ("TOTAL PASSIVO CIRCULANTE", "BAL Passivo Circulante", "total"),
+    ("2. PASSIVO NÃO CIRCULANTE", None, "section"),
+    ("Outros Débitos de longo prazo", "BAL Outros deb", "item"),
+    (
+        "Empréstimos e financiamentos bancários de longo prazo",
+        "BAL Emprest",
+        "item",
+    ),
+    ("Provisões para Contingências", "BAL Prov para Contingencias", "item"),
+    ("TOTAL PASSIVO NÃO CIRCULANTE", "__TOTAL_PASSIVO_NAO_CIRCULANTE__", "total"),
+    ("3. PATRIMÔNIO LÍQUIDO", None, "section"),
+    ("Capital Social", "BAL Capital Social", "item"),
+    ("Dividendos Antecipados", "BAL Dividendos Antecipados", "item"),
+    ("Reservas de Capital", "BAL Reservas de Capital", "item"),
+    ("Reservas Legais", "BAL Reservas Legais", "item"),
+    ("Reserva de Retenção de Lucros", "BAL Reserva de Retencao de Lucros", "item"),
+    ("Resultado Acumulado", "BAL Resultado Acumulado", "item"),
+    ("Resultado do Período", "BAL Resultado do Periodo", "item"),
+    ("TOTAL PATRIMÔNIO LÍQUIDO", "BAL Patrimonio Liquido", "total"),
+)
+
 
 def _brl(value):
+    if pd.isna(value):
+        value = 0.0
     return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _balanco_cell_value(balance_sheet, year, account):
+    if account == "__TOTAL_ATIVO_NAO_CIRCULANTE__":
+        total_ativo = balance_sheet.at[year, "BAL Total do Ativo"]
+        ativo_circ = balance_sheet.at[year, "BAL Ativo Circulante"]
+        return (0.0 if pd.isna(total_ativo) else total_ativo) - (
+            0.0 if pd.isna(ativo_circ) else ativo_circ
+        )
+    if account == "__TOTAL_PASSIVO_NAO_CIRCULANTE__":
+        parts = (
+            balance_sheet.at[year, "BAL Outros deb"],
+            balance_sheet.at[year, "BAL Emprest"],
+            balance_sheet.at[year, "BAL Prov para Contingencias"],
+        )
+        return sum(0.0 if pd.isna(v) else v for v in parts)
+    return balance_sheet.at[year, account]
 
 
 def build_dfc_table(data, years, scenario):
@@ -50,6 +147,49 @@ def build_dfc_table(data, years, scenario):
                         ),
                     )
                     for label, account in DFC_ROWS
+                ]
+            ),
+        ],
+        className="dfc-table",
+    )
+
+
+def build_balanco_table(data, years, scenario):
+    balance_sheet = data.loc[data["Cenário"].eq(scenario)].set_index("Ano")
+    columns = [f"Ano {year}" for year in years]
+    return html.Table(
+        [
+            html.Thead(
+                html.Tr(
+                    [html.Th("Conta", scope="col")]
+                    + [html.Th(year, scope="col") for year in columns]
+                )
+            ),
+            html.Tbody(
+                [
+                    html.Tr(
+                        [html.Th(label, scope="row")]
+                        + (
+                            [html.Td("") for _ in columns]
+                            if kind == "section"
+                            else [
+                                html.Td(
+                                    _brl(
+                                        _balanco_cell_value(
+                                            balance_sheet, year, account
+                                        )
+                                    )
+                                )
+                                for year in columns
+                            ]
+                        ),
+                        className=(
+                            "dfc-total"
+                            if kind in {"total", "section"}
+                            else ""
+                        ),
+                    )
+                    for label, account, kind in BALANCO_ROWS
                 ]
             ),
         ],
@@ -501,6 +641,117 @@ def build_dfc_page(
     )
 
 
+def build_balanco_page(
+    page_id: str, title: str, subtitle: str, years: list, scenarios: list, data
+):
+    """Constrói a árvore DOM da página Balanço Patrimonial."""
+    header_card = html.Div(
+        style=STATEMENT_HEADER_CARD_STYLE,
+        children=[
+            html.H2(title, style=STATEMENT_TITLE_STYLE),
+            html.P(subtitle, style=STATEMENT_SUBTITLE_STYLE),
+        ],
+    )
+
+    filters_row = html.Div(
+        style={
+            "marginBottom": "20px",
+            "display": "flex",
+            "gap": "16px",
+            "flexWrap": "wrap",
+        },
+        children=[
+            html.Div(
+                style={"display": "flex", "flexDirection": "column", "width": "218px"},
+                children=[
+                    html.Div(
+                        style={
+                            "display": "flex",
+                            "justifyContent": "space-between",
+                            "alignItems": "center",
+                            "marginBottom": "4px",
+                        },
+                        children=[
+                            html.Label(
+                                "Ano(s)",
+                                style={**FILTER_LABEL_STYLE, "marginBottom": "0"},
+                            ),
+                            html.Button(
+                                "x",
+                                id="balanco-years-clear-btn",
+                                n_clicks=0,
+                                style={
+                                    "background": "none",
+                                    "border": "none",
+                                    "color": "#64748b",
+                                    "fontSize": "11px",
+                                    "fontWeight": "600",
+                                    "cursor": "pointer",
+                                    "padding": "0 2px",
+                                },
+                            ),
+                        ],
+                    ),
+                    dcc.Dropdown(
+                        id="balanco-years",
+                        options=[
+                            {"label": f"Ano {year}", "value": year} for year in years
+                        ],
+                        value=list(years),
+                        multi=True,
+                        clearable=False,
+                        searchable=True,
+                    ),
+                ],
+            ),
+            build_statement_filter_field(
+                "Cenário",
+                dcc.Dropdown(
+                    id="balanco-scenario",
+                    options=[
+                        {"label": f"Cenário {index}", "value": scenario}
+                        for index, scenario in enumerate(scenarios, start=1)
+                    ],
+                    value=scenarios[0],
+                    clearable=False,
+                    searchable=True,
+                ),
+                width="218px",
+            ),
+        ],
+    )
+
+    table_card = build_statement_card(
+        "Tabela Balanço Patrimonial",
+        [
+            filters_row,
+            html.Div(
+                build_balanco_table(data, years, scenarios[0]),
+                id="balanco-table-content",
+                className="dfc-table-wrap",
+            ),
+        ],
+    )
+
+    return html.Div(
+        id=page_id,
+        className=page_id,
+        style={"display": "none"},
+        children=[
+            html.Div(
+                style=STATEMENT_CONTAINER_STYLE,
+                children=[
+                    header_card,
+                    html.Div(
+                        style=STATEMENT_CONTENT_STYLE,
+                        children=[table_card],
+                    ),
+                ],
+            )
+        ],
+    )
+
+
 def create_main_layout(
     years, scenarios, perspectives, perspective_metrics, metric_labels, data
 ):
@@ -536,6 +787,13 @@ def create_main_layout(
                         id="tab-dfc",
                         className="nav-tab nav-link",
                         title="DFC",
+                    ),
+                    dcc.Link(
+                        "Balanço",
+                        href="/balanco",
+                        id="tab-balanco",
+                        className="nav-tab nav-link",
+                        title="Balanço",
                     ),
                 ],
             )
@@ -714,6 +972,15 @@ def create_main_layout(
         data=data,
     )
 
+    balanco_div = build_balanco_page(
+        page_id="balanco-page",
+        title="Balanço Patrimonial",
+        subtitle="Posição patrimonial e financeira da concessão ao final de cada exercício. Apresenta a composição dos ativos (circulante, realizável a longo prazo e permanente), passivos exigíveis e patrimônio líquido.",
+        years=years,
+        scenarios=scenarios,
+        data=data,
+    )
+
     return html.Div(
         className="app-container",
         children=[
@@ -723,5 +990,6 @@ def create_main_layout(
             dashboard_div,
             dre_div,
             dfc_div,
+            balanco_div,
         ],
     )
