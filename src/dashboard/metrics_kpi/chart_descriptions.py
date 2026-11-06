@@ -48,8 +48,16 @@ def get_trend_description(latest, prev, latest_year):
     )
 
     has_prev = prev is not None and not prev.empty
-    delta_rec = (rec_val - prev.receita.median()) if has_prev and "receita" in prev.columns else None
-    delta_ebitda = (ebitda_val - prev.ebitda.median()) if has_prev and "ebitda" in prev.columns else None
+    delta_rec = (
+        (rec_val - prev.receita.median())
+        if has_prev and "receita" in prev.columns
+        else None
+    )
+    delta_ebitda = (
+        (ebitda_val - prev.ebitda.median())
+        if has_prev and "ebitda" in prev.columns
+        else None
+    )
 
     cal_year = 2026 + latest_year
 
@@ -94,7 +102,9 @@ def get_trend_description(latest, prev, latest_year):
 
 def get_value_cash_description(latest, prev, latest_year):
     """Gera a descrição analítica dinâmica para o gráfico de Geração de Caixa vs. EVA."""
-    caixa_val = latest.geracao_caixa.median() if "geracao_caixa" in latest.columns else 0
+    caixa_val = (
+        latest.geracao_caixa.median() if "geracao_caixa" in latest.columns else 0
+    )
     eva_val = latest.eva.median() if "eva" in latest.columns else 0
     cal_year = 2026 + latest_year
 
@@ -151,7 +161,11 @@ def get_risk_description(latest, risk, latest_year, perspective="gestao"):
             eva_risk = float(r.get("eva_negativo", 0.0))
 
     if perspective == "tecnica":
-        liq_val = latest.liquidez_corrente.median() if "liquidez_corrente" in latest.columns else 0
+        liq_val = (
+            latest.liquidez_corrente.median()
+            if "liquidez_corrente" in latest.columns
+            else 0
+        )
         status_liq = "confortável (≥ 1,0x)" if liq_val >= 1 else "em estresse (< 1,0x)"
         texto_risco = (
             f"No Ano {latest_year} ({cal_year}), a liquidez corrente mediana situa-se em {ratio(liq_val)} ({status_liq}). "
@@ -204,9 +218,13 @@ def get_risk_description(latest, risk, latest_year, perspective="gestao"):
 def get_scatter_description(latest, latest_year):
     """Gera a descrição analítica dinâmica para o Scatter plot (Margem EBITDA vs. EVA)."""
     cal_year = 2026 + latest_year
-    margem_val = latest.margem_ebitda.median() if "margem_ebitda" in latest.columns else 0
+    margem_val = (
+        latest.margem_ebitda.median() if "margem_ebitda" in latest.columns else 0
+    )
     eva_val = latest.eva.median() if "eva" in latest.columns else 0
-    pct_positive_eva = (latest.eva > 0).mean() if ("eva" in latest.columns and not latest.empty) else 0
+    pct_positive_eva = (
+        (latest.eva > 0).mean() if ("eva" in latest.columns and not latest.empty) else 0
+    )
 
     texto_base = (
         f"No Ano {latest_year} ({cal_year}), a dispersão dos cenários indica margem EBITDA mediana de {percent(margem_val)} "
@@ -242,7 +260,11 @@ def get_balance_description(latest, latest_year):
     """Gera a descrição analítica dinâmica para o Balanço Patrimonial Waterfall."""
     cal_year = 2026 + latest_year
     divida = latest.divida_total.median() if "divida_total" in latest.columns else 0
-    pl = latest.patrimonio_liquido.median() if "patrimonio_liquido" in latest.columns else 0
+    pl = (
+        latest.patrimonio_liquido.median()
+        if "patrimonio_liquido" in latest.columns
+        else 0
+    )
     caixa = latest.caixa.median() if "caixa" in latest.columns else 0
     pct_terceiros = (
         latest.participacao_capital_terceiros.median()
@@ -257,17 +279,11 @@ def get_balance_description(latest, latest_year):
     )
 
     if pct_terceiros <= 1.0:
-        conclusao = (
-            "A predominância de recursos próprios proporciona sólida margem de segurança contra choques de juros e assegura autonomia financeira aos patrocinadores."
-        )
+        conclusao = "A predominância de recursos próprios proporciona sólida margem de segurança contra choques de juros e assegura autonomia financeira aos patrocinadores."
     elif pct_terceiros <= 2.5:
-        conclusao = (
-            "A composição de capital adota alavancagem equilibrada, capturando o benefício fiscal da dívida sem comprometer a estabilidade do balanço patrimonial."
-        )
+        conclusao = "A composição de capital adota alavancagem equilibrada, capturando o benefício fiscal da dívida sem comprometer a estabilidade do balanço patrimonial."
     else:
-        conclusao = (
-            "O elevado endividamento em relação ao patrimônio líquido amplia o risco financeiro e exige acompanhamento diligente do cronograma de amortizações e covenants."
-        )
+        conclusao = "O elevado endividamento em relação ao patrimônio líquido amplia o risco financeiro e exige acompanhamento diligente do cronograma de amortizações e covenants."
 
     return html.P(
         [
@@ -278,7 +294,9 @@ def get_balance_description(latest, latest_year):
     )
 
 
-def get_distribution_description(latest, selected_metric, metric_labels, latest_year, perspective="gestao"):
+def get_distribution_description(
+    latest, selected_metric, metric_labels, latest_year, perspective="gestao"
+):
     """Gera a descrição analítica dinâmica para a distribuição de cenários (Violin/Box Plot)."""
     cal_year = 2026 + latest_year
     metric_name = metric_labels.get(selected_metric, selected_metric)
@@ -290,7 +308,10 @@ def get_distribution_description(latest, selected_metric, metric_labels, latest_
     )
 
     if values.empty:
-        return html.P("Sem dados disponíveis para a métrica selecionada.", className="chart-description")
+        return html.P(
+            "Sem dados disponíveis para a métrica selecionada.",
+            className="chart-description",
+        )
 
     p10, p25, p50, p75, p90 = values.quantile([0.10, 0.25, 0.50, 0.75, 0.90])
     iqr = p75 - p25
@@ -319,7 +340,9 @@ def get_distribution_description(latest, selected_metric, metric_labels, latest_
     if perspective == "investidores":
         return html.P(
             [
-                html.Strong(f"Sensibilidade de Retorno sob Incerteza ({metric_name}): "),
+                html.Strong(
+                    f"Sensibilidade de Retorno sob Incerteza ({metric_name}): "
+                ),
                 (
                     f"No Ano {latest_year} ({cal_year}), o indicador apresenta mediana de {p50_fmt}. "
                     f"A faixa central de 50% dos cenários simulados situa-se entre {p25_fmt} (Q1) e {p75_fmt} (Q3), "
@@ -343,4 +366,3 @@ def get_distribution_description(latest, selected_metric, metric_labels, latest_
         ],
         className="chart-description",
     )
-

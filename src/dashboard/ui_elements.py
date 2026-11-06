@@ -120,10 +120,10 @@ def section(title, subtitle, children, footer_desc=None):
         html.Div([html.H2(title), html.P(subtitle, className="section-subtitle")]),
         *children,
     ]
-    
+
     if footer_desc:
         elements.append(html.P(footer_desc, className="section-description"))
-    
+
     return html.Section(elements, className="section")
 
 

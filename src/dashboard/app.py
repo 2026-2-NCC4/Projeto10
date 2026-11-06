@@ -135,7 +135,11 @@ from metrics_kpi.terminal_liquidation import build_terminal_liquidation_section
 from perspectives.technical import render_technical_view
 from perspectives.investors import render_investor_view
 from perspectives.management import render_management_view
-from perspectives.dashboard_layout import build_dfc_table, build_dre_table, create_main_layout
+from perspectives.dashboard_layout import (
+    build_dfc_table,
+    build_dre_table,
+    create_main_layout,
+)
 
 # ==============================================================================
 # PATH RESOLUTION & ENVIRONMENT SETUP
