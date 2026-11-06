@@ -84,6 +84,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # ==============================================================================
 import sys, os
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from pathlib import Path
 import unicodedata
@@ -204,6 +205,7 @@ app.layout = create_main_layout(
 def render_content(
     years, scenarios, selected_metric="margem_ebitda", perspective="gestao"
 ):
+
     # --------------------------------------------------------------------------
     # 1. PARAMETER SANITIZATION & FILTERING
     # --------------------------------------------------------------------------
@@ -233,7 +235,6 @@ def render_content(
     operating = filtered[~filtered.encerramento]
     if operating.empty:
         operating = filtered
-
     # Identify latest operating year in the filtered slice and compare with previous year
     latest_year = int(operating.ano_num.max())
     latest = operating[operating.ano_num.eq(latest_year)]
@@ -313,7 +314,6 @@ def render_content(
     )
     # --------------------------------------------------------------------------
     # 10. PERSPECTIVE VIEW ROUTING
-    # --------------------------------------------------------------------------
     if perspective == "tecnica":
         return render_technical_view(
             index_fig,
@@ -331,17 +331,20 @@ def render_content(
         )
 
     if perspective == "investidores":
-        return render_investor_view(
-            index_fig,
-            subtitle,
-            latest,
-            delta,
-            investor_insights,
-            scatter,
-            value_fig,
-            balance_fig,
-            terminal_children,
-            distribution,
+        return render_investor_view(  # <--- Adicionado o "return" aqui
+            index_fig=index_fig,
+            subtitle=subtitle,
+            latest=latest,
+            delta=delta,
+            investor_insights=investor_insights,
+            scatter=scatter,
+            value_fig=value_fig,
+            balance_fig=balance_fig,
+            terminal_children=terminal_children,
+            distribution=distribution,
+            historical_data=operating,
+            prev=prev,
+            latest_year=latest_year,
         )
 
     # Default: Management / Executive
@@ -357,8 +360,6 @@ def render_content(
         terminal_children,
         distribution,
     )
-
-
 # ==============================================================================
 # REACTIVE CALLBACKS (INTERACTIVITY)
 # ==============================================================================
