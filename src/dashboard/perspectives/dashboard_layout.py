@@ -415,7 +415,7 @@ def build_dfc_page(
                         children=[
                             html.Label("Ano(s)", style={**FILTER_LABEL_STYLE, "marginBottom": "0"}),
                             html.Button(
-                                "Limpar",
+                                "x",
                                 id="dfc-years-clear-btn",
                                 n_clicks=0,
                                 style={
@@ -426,7 +426,6 @@ def build_dfc_page(
                                     "fontWeight": "600",
                                     "cursor": "pointer",
                                     "padding": "0 2px",
-                                    "textDecoration": "underline",
                                 },
                             ),
                         ],

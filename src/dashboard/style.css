@@ -162,7 +162,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Unified statement page wrapper: DRE and DFC share the same base layout rule */
+/* Unified statement page wrapper (DRE and DFC pages) */
 .dre-page,
 .dfc-page {
   width: 100%;
@@ -191,13 +191,268 @@ body {
   font-weight: 500;
 }
 
+/* Dropdowns */
+
 .dash-dropdown {
-  border: 1px solid var(--line-strong);
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  background: #ffffff !important;
+  color: var(--ink) !important;
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.dash-dropdown:hover {
+  border-color: #999999 !important;
+}
+
+.dash-dropdown:focus-within,
+.dash-dropdown:focus {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 2px var(--sky-weak) !important;
+}
+
+.dash-dropdown-trigger {
+  min-height: 36px !important;
+  padding: 4px 12px !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.dash-dropdown-value {
+  color: var(--ink) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+
+.dash-dropdown-placeholder {
+  color: #8c8c8c !important;
+  font-weight: 400 !important;
+}
+
+.dash-dropdown-trigger-icon {
+  color: var(--ink-weak) !important;
+  fill: var(--ink-weak) !important;
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.dash-dropdown:hover .dash-dropdown-trigger-icon {
+  opacity: 1;
+}
+
+/* Dropdown Popup Menu / Popover Container */
+.dash-dropdown-content {
+  background: #ffffff !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+  z-index: 1050 !important;
+  padding: 6px !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search bar inside dropdown popup */
+.dash-dropdown-search-container {
+  margin: 4px 4px 8px 4px !important;
+  padding: 2px 8px !important;
+  background: var(--fill) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dash-dropdown-search-container:focus-within {
+  border-color: var(--blue) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 2px var(--sky-weak) !important;
+}
+
+.dash-dropdown-search-icon {
+  color: var(--ink-weak) !important;
+}
+
+.dash-dropdown-search {
+  font-family: inherit !important;
+  font-size: 0.88rem !important;
+  color: var(--ink) !important;
+  outline: none !important;
+}
+
+.dash-dropdown-search::placeholder {
+  color: #8c8c8c !important;
+}
+
+/* Actions bar (e.g. Select all / Clear all) */
+.dash-dropdown-actions {
+  padding: 6px 8px !important;
+  margin-bottom: 4px !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-top: none !important;
+  gap: 12px !important;
+}
+
+.dash-dropdown-action-button {
+  color: var(--blue) !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  padding: 2px 4px !important;
+  border-radius: 4px;
+}
+
+.dash-dropdown-action-button:hover {
+  background: var(--light-blue) !important;
+  text-decoration: none !important;
+}
+
+/* Options List */
+.dash-dropdown-options {
+  max-height: 260px !important;
+  padding: 2px 0 !important;
+}
+
+.dash-options-list {
+  scrollbar-width: none;
+}
+
+.dash-dropdown-option,
+.dash-options-list-option {
+  padding: 6px 8px !important;
+  margin: 2px 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font-size: 0.88rem !important;
+  font-weight: 400 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  text-decoration: none !important;
+  transition: background-color 0.12s ease, color 0.12s ease !important;
+}
+
+.dash-dropdown-option:hover,
+.dash-dropdown-option:focus,
 .dash-options-list-option:not(:has(input[disabled])):hover,
 .dash-options-list-option:not(:has(input[disabled])):focus-within {
-  color: var(--ink);
+  background: var(--light-blue) !important;
+  color: var(--ink) !important;
+}
+
+/* Selected option highlight */
+.dash-dropdown-option[aria-selected="true"],
+.dash-dropdown-option.selected,
+.dash-options-list-option:has(input:checked) {
+  background: var(--sky-weak) !important;
+  color: var(--dark-blue) !important;
+}
+
+/* Checkbox inside dropdown multi-select */
+.dash-options-list-option-checkbox,
+.dash-dropdown-option input[type="checkbox"],
+.dash-dropdown-option input[type="radio"] {
+  appearance: auto;
+  accent-color: var(--blue) !important;
+  margin-right: 8px !important;
+  cursor: pointer;
+}
+
+/* Value badge / tag for multi-selects */
+.dash-dropdown-value-item {
+  display: inline-flex;
+  align-items: center;
+  background: var(--fill) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  margin: 2px 4px 2px 0 !important;
+  font-size: 0.82rem !important;
+}
+
+.dash-dropdown-value-count {
+  background: var(--light-blue) !important;
+  color: var(--dark-blue) !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+}
+
+/* Clear icon / button */
+.dash-dropdown-clear {
+  color: var(--ink-weak) !important;
+  transition: color 0.15s ease;
+  margin-left: 4px;
+}
+
+.dash-dropdown-clear:hover {
+  color: var(--plum) !important;
+}
+
+/* Fallback legacy react-select styling (in case react-select is used) */
+.Select-control {
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  background: #ffffff !important;
+  min-height: 36px !important;
+  box-shadow: none !important;
+}
+
+.is-focused:not(.is-open) > .Select-control,
+.Select-control:hover {
+  border-color: var(--blue) !important;
+}
+
+.Select-menu-outer {
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+  background: #ffffff !important;
+  margin-top: 4px !important;
+  z-index: 1050 !important;
+  overflow: hidden !important;
+}
+
+.Select-option {
+  padding: 8px 12px !important;
+  font-size: 0.88rem !important;
+  color: var(--ink) !important;
+  cursor: pointer !important;
+}
+
+.Select-option:hover,
+.Select-option.is-focused {
+  background: var(--fill-hover) !important;
+  color: var(--ink) !important;
+}
+
+.Select-option.is-selected {
+  background: var(--light-blue) !important;
+  color: var(--dark-blue) !important;
+  font-weight: 600 !important;
 }
 
 .cell-table {
