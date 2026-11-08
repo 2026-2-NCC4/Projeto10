@@ -6,41 +6,92 @@ from config import FONT_STACK, COLORS
 # ==============================================================================
 # REUSABLE UI COMPONENT BUILDERS
 # ==============================================================================
-def row(label, control, readout=None):
+def row(
+    label,
+    control,
+    readout=None,
+    label_id=None,
+    control_id=None,
+    dropdown_control=None,
+    dropdown_id=None,
+    range_id=None,
+):
     """Build a standard two-column control row for the sidebar.
 
     Parameters:
         label (str): Title of the control (e.g. "Anos da concessão").
         control (dash component): Interactive input (e.g. Slider or Dropdown).
         readout (dash component, optional): Dynamic badge displaying the current value.
+        label_id (str, optional): ID for the label span component.
+        control_id (str, optional): ID for the control wrapper div.
+        dropdown_control (dash component, optional): Optional alternate dropdown control.
+        dropdown_id (str, optional): ID for the dropdown wrapper div.
+        range_id (str, optional): ID for the range controls wrapper div.
 
     Returns:
         html.Div: Styled row element containing label on left, control on right.
     """
-    right = [html.Div(control, className="row-control")]
+    control_props = {"className": "row-control"}
+    if control_id is not None:
+        control_props["id"] = control_id
+    right = [html.Div(control, **control_props)]
     if readout is not None:
         right.append(readout)
-    return html.Div(
-        [
-            html.Span(label, className="row-label"),
-            html.Div(right, className="row-right"),
-        ],
-        className="row",
-    )
+
+    range_props = {"className": "row-right"}
+    if range_id is not None:
+        range_props["id"] = range_id
+
+    children = [
+        html.Span(
+            label,
+            **({"id": label_id} if label_id else {"className": "row-label"}),
+        ),
+        html.Div(right, **range_props),
+    ]
+    if dropdown_control is not None:
+        dropdown_props = {
+            "className": "row-dropdown-container",
+            "style": {"display": "none"},
+        }
+        if dropdown_id is not None:
+            dropdown_props["id"] = dropdown_id
+        children.append(html.Div(dropdown_control, **dropdown_props))
+
+    return html.Div(children, className="row")
 
 
-def panel(title, children, open_by_default=True):
+def panel(
+    title,
+    children,
+    open_by_default=True,
+    id=None,
+    style=None,
+    className="panel",
+    **kwargs,
+):
     """Build a collapsible HTML5 <details> panel for sidebar grouping.
 
     Parameters:
         title (str): Header text displayed on the clickable summary.
         children (list): Inner Dash components inside the panel body.
         open_by_default (bool): Whether the accordion is initially expanded.
+        id (str, optional): Unique component ID.
+        style (dict, optional): Inline styling.
+        className (str, optional): CSS class names.
     """
+    props = {
+        "open": open_by_default,
+        "className": className,
+        **kwargs,
+    }
+    if id is not None:
+        props["id"] = id
+    if style is not None:
+        props["style"] = style
     return html.Details(
         [html.Summary(title), html.Div(children, className="panel-body")],
-        open=open_by_default,
-        className="panel",
+        **props,
     )
 
 

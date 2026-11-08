@@ -97,7 +97,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # Web framework and interactive components
-from dash import Dash, Input, Output, dcc, html, no_update
+from dash import Dash, Input, Output, State, callback_context, dcc, html, no_update
 
 # Local helper for custom polar petal geometry (Bezier curve coordinates)
 from petals import petal
@@ -203,6 +203,97 @@ app.layout = create_main_layout(
 
 
 # ==============================================================================
+# SELECTION PARSING & RESOLUTION HELPERS
+# ==============================================================================
+def parse_selection_string(text):
+    """Parse a range/list selection string like:
+      '12' -> [12]
+      '12-15' -> [12, 13, 14, 15]
+      '15-18;19' -> [15, 16, 17, 18, 19]
+      '1, 2, 5-8' -> [1, 2, 5, 6, 7, 8]
+    """
+    if text is None:
+        return []
+    cleaned = str(text).replace(",", ";").replace("–", "-").replace("—", "-")
+    tokens = [t.strip() for t in cleaned.split(";") if t.strip()]
+    selected = set()
+    for token in tokens:
+        range_match = re.match(r"^(\d+)\s*-\s*(\d+)$", token)
+        if range_match:
+            start = int(range_match.group(1))
+            end = int(range_match.group(2))
+            if start <= end:
+                selected.update(range(start, end + 1))
+            else:
+                selected.update(range(end, start + 1))
+            continue
+        num_match = re.match(r"^\d+$", token)
+        if num_match:
+            selected.add(int(num_match.group()))
+            continue
+    return sorted(selected)
+
+
+def get_selected_years(years_val, all_years):
+    if isinstance(years_val, str):
+        nums = parse_selection_string(years_val)
+    elif isinstance(years_val, (list, tuple)):
+        if (
+            len(years_val) == 2
+            and all(isinstance(x, (int, float)) for x in years_val)
+            and years_val[0] in all_years
+            and years_val[1] in all_years
+        ):
+            first, last = int(years_val[0]), int(years_val[1])
+            nums = list(range(min(first, last), max(first, last) + 1))
+        else:
+            nums = [int(x) for x in years_val if str(x).isdigit()]
+    else:
+        return list(all_years)
+
+    valid_set = set(all_years)
+    result = set()
+    for n in nums:
+        if n in valid_set:
+            result.add(n)
+        elif (n - 2026) in valid_set:
+            result.add(n - 2026)
+    res_list = sorted(result)
+    return res_list if res_list else list(all_years)
+
+
+def get_selected_scenarios(scenarios_val, all_scenarios):
+    if isinstance(scenarios_val, str):
+        nums = parse_selection_string(scenarios_val)
+    elif isinstance(scenarios_val, (list, tuple)):
+        if any(isinstance(x, str) and not x.isdigit() for x in scenarios_val):
+            return [s for s in scenarios_val if s in all_scenarios]
+        if len(scenarios_val) == 2 and all(isinstance(x, (int, float)) for x in scenarios_val):
+            first, last = int(scenarios_val[0]), int(scenarios_val[1])
+            nums = list(range(min(first, last), max(first, last) + 1))
+        else:
+            nums = [int(x) for x in scenarios_val if str(x).isdigit()]
+    else:
+        return list(all_scenarios)
+
+    if not nums:
+        return list(all_scenarios)
+
+    num_to_scen = {}
+    for s in all_scenarios:
+        m = re.search(r"\d+", str(s))
+        if m:
+            num_to_scen[int(m.group())] = s
+
+    for idx, s in enumerate(all_scenarios, start=1):
+        if idx not in num_to_scen:
+            num_to_scen[idx] = s
+
+    result = [num_to_scen[n] for n in nums if n in num_to_scen]
+    return result if result else list(all_scenarios)
+
+
+# ==============================================================================
 # CORE DYNAMIC RENDERING ENGINE
 # ==============================================================================
 def render_content(
@@ -212,19 +303,17 @@ def render_content(
     # --------------------------------------------------------------------------
     # 1. PARAMETER SANITIZATION & FILTERING
     # --------------------------------------------------------------------------
-    year_from, year_to = years or [min(YEARS), max(YEARS)]
-    scenario_from, scenario_to = scenarios or [1, len(SCENARIOS)]
+    selected_years = get_selected_years(years, YEARS)
+    chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
     perspective = perspective if perspective in PERSPECTIVES else "gestao"
     allowed_metrics = PERSPECTIVE_METRICS[perspective]
     selected_metric = (
         selected_metric if selected_metric in allowed_metrics else allowed_metrics[0]
     )
-    # Slice the chosen subset of scenarios
-    chosen_scenarios = SCENARIOS[scenario_from - 1 : scenario_to]
 
     # Filter dataframe by selected years and scenarios
     filtered = DATA[
-        DATA.ano_num.between(year_from, year_to)
+        DATA.ano_num.isin(selected_years)
         & DATA["Cenário"].isin(chosen_scenarios)
     ].copy()
 
@@ -241,7 +330,8 @@ def render_content(
     # Identify latest operating year in the filtered slice and compare with previous year
     latest_year = int(operating.ano_num.max())
     latest = operating[operating.ano_num.eq(latest_year)]
-    prev = operating[operating.ano_num.eq(latest_year - 1)]
+    prev_year = max([y for y in selected_years if y < latest_year], default=latest_year - 1)
+    prev = operating[operating.ano_num.eq(prev_year)]
 
     # Helper: compute year-over-year median difference for a metric
     def delta(metric):
@@ -394,24 +484,92 @@ def describe_perspective(perspective):
     return PERSPECTIVE_SUMMARIES.get(perspective, PERSPECTIVE_SUMMARIES["gestao"])
 
 
-@app.callback(Output("years-readout", "children"), Input("years", "value"))
-def show_year_range(years):
-    """Update the text readout next to the concession years slider (e.g. '1–12')."""
-    first, last = years
-    return str(first) if first == last else f"{first}–{last}"
+# ==============================================================================
+# BIDIRECTIONAL SLIDER & TEXT INPUT SYNCHRONIZATION
+# ==============================================================================
+@app.callback(
+    Output("years", "value"),
+    Input("years-input", "value"),
+    State("years", "value"),
+    prevent_initial_call=True,
+)
+def sync_years_input_to_slider(text_val, current_slider):
+    """Update years slider when user types in the input box."""
+    if not text_val:
+        return no_update
+    selected = get_selected_years(text_val, YEARS)
+    if not selected:
+        return no_update
+    target = [min(selected), max(selected)]
+    if current_slider == target:
+        return no_update
+    return target
 
 
-@app.callback(Output("scenarios-readout", "children"), Input("scenarios", "value"))
-def show_scenario_count(scenarios):
-    """Update the text readout next to the scenario slider with pt-BR thousand dots."""
-    first, last = scenarios
-    return f"{last - first + 1:,}".replace(",", ".")
+@app.callback(
+    Output("years-input", "value"),
+    Input("years", "value"),
+    Input("url", "pathname"),
+    State("years-input", "value"),
+)
+def sync_years_slider_to_input(slider_val, pathname, current_text):
+    """Update years input text when user moves the slider or navigates pages."""
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    first, last = slider_val if slider_val else (min(YEARS), max(YEARS))
+    if clean_path == "/dre":
+        target = str(first)
+    else:
+        target = str(first) if first == last else f"{first}-{last}"
+
+    if current_text == target:
+        return no_update
+    return target
+
+
+@app.callback(
+    Output("scenarios", "value"),
+    Input("scenarios-input", "value"),
+    State("scenarios", "value"),
+    prevent_initial_call=True,
+)
+def sync_scenarios_input_to_slider(text_val, current_slider):
+    """Update scenarios slider when user types in the input box."""
+    if not text_val:
+        return no_update
+    nums = parse_selection_string(text_val)
+    valid_nums = [n for n in nums if 1 <= n <= len(SCENARIOS)]
+    if not valid_nums:
+        return no_update
+    target = [min(valid_nums), max(valid_nums)]
+    if current_slider == target:
+        return no_update
+    return target
+
+
+@app.callback(
+    Output("scenarios-input", "value"),
+    Input("scenarios", "value"),
+    Input("url", "pathname"),
+    State("scenarios-input", "value"),
+)
+def sync_scenarios_slider_to_input(slider_val, pathname, current_text):
+    """Update scenarios input text when user moves the slider or navigates pages."""
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    first, last = slider_val if slider_val else (1, len(SCENARIOS))
+    if clean_path in ("/dfc", "/balanco"):
+        target = str(first)
+    else:
+        target = str(first) if first == last else f"{first}-{last}"
+
+    if current_text == target:
+        return no_update
+    return target
 
 
 @app.callback(
     Output("dashboard-content", "children"),
-    Input("years", "value"),
-    Input("scenarios", "value"),
+    Input("years-input", "value"),
+    Input("scenarios-input", "value"),
     Input("distribution-metric", "value"),
     Input("perspective", "value"),
 )
@@ -445,52 +603,46 @@ app.clientside_callback(
 
 
 @app.callback(
-    Output("dfc-years", "value"),
-    Input("dfc-years-clear-btn", "n_clicks"),
-    prevent_initial_call=True,
-)
-def limpar_anos_dfc(n_clicks):
-    if n_clicks and len(YEARS) > 0:
-        return [min(YEARS)]
-    return no_update
-
-
-@app.callback(
     Output("dfc-table-content", "children"),
-    Input("dfc-scenario", "value"),
-    Input("dfc-years", "value"),
+    Input("years-input", "value"),
+    Input("scenarios-input", "value"),
+    Input("single-scenario-dropdown", "value"),
+    Input("url", "pathname"),
 )
-def render_dfc(scenario, years):
-    selected_years = [year for year in YEARS if year in (years or YEARS)]
+def render_dfc(years, scenarios, single_scenario_val, pathname):
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    selected_years = get_selected_years(years, YEARS)
+    if clean_path == "/dfc" and single_scenario_val is not None:
+        single_scenario = single_scenario_val
+    else:
+        chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
+        single_scenario = chosen_scenarios[0] if chosen_scenarios else SCENARIOS[0]
     return build_dfc_table(
         DATA,
         selected_years,
-        scenario if scenario in SCENARIOS else SCENARIOS[0],
+        single_scenario,
     )
 
 
 @app.callback(
-    Output("balanco-years", "value"),
-    Input("balanco-years-clear-btn", "n_clicks"),
-    prevent_initial_call=True,
-)
-def limpar_anos_balanco(n_clicks):
-    if n_clicks and len(YEARS) > 0:
-        return [min(YEARS)]
-    return no_update
-
-
-@app.callback(
     Output("balanco-table-content", "children"),
-    Input("balanco-scenario", "value"),
-    Input("balanco-years", "value"),
+    Input("years-input", "value"),
+    Input("scenarios-input", "value"),
+    Input("single-scenario-dropdown", "value"),
+    Input("url", "pathname"),
 )
-def render_balanco(scenario, years):
-    selected_years = [year for year in YEARS if year in (years or YEARS)]
+def render_balanco(years, scenarios, single_scenario_val, pathname):
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    selected_years = get_selected_years(years, YEARS)
+    if clean_path == "/balanco" and single_scenario_val is not None:
+        single_scenario = single_scenario_val
+    else:
+        chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
+        single_scenario = chosen_scenarios[0] if chosen_scenarios else SCENARIOS[0]
     return build_balanco_table(
         DATA,
         selected_years,
-        scenario if scenario in SCENARIOS else SCENARIOS[0],
+        single_scenario,
     )
 
 
@@ -499,6 +651,14 @@ def render_balanco(scenario, years):
     Output("dre-page", "style"),
     Output("dfc-page", "style"),
     Output("balanco-page", "style"),
+    Output("sidebar-panel-perspective", "style"),
+    Output("sidebar-panel-indicador", "style"),
+    Output("years-row-label", "children"),
+    Output("scenarios-row-label", "children"),
+    Output("years-range-container", "style"),
+    Output("single-year-container", "style"),
+    Output("scenarios-range-container", "style"),
+    Output("single-scenario-container", "style"),
     Output("tab-dashboard", "className"),
     Output("tab-dre", "className"),
     Output("tab-dfc", "className"),
@@ -517,6 +677,14 @@ def display_page(pathname):
             {"display": "block"},
             {"display": "none"},
             {"display": "none"},
+            {"display": "none"},
+            {"display": "none"},
+            "Ano da concessão (1 ano)",
+            "Cenários simulados",
+            {"display": "none"},
+            {},
+            {},
+            {"display": "none"},
             base_tab,
             active_tab,
             base_tab,
@@ -529,6 +697,14 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "block"},
             {"display": "none"},
+            {"display": "none"},
+            {"display": "none"},
+            "Anos da concessão",
+            "Cenário simulado (1 cenário)",
+            {},
+            {"display": "none"},
+            {"display": "none"},
+            {},
             base_tab,
             base_tab,
             active_tab,
@@ -541,6 +717,14 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "none"},
             {"display": "block"},
+            {"display": "none"},
+            {"display": "none"},
+            "Anos da concessão",
+            "Cenário simulado (1 cenário)",
+            {},
+            {"display": "none"},
+            {"display": "none"},
+            {},
             base_tab,
             base_tab,
             base_tab,
@@ -551,6 +735,14 @@ def display_page(pathname):
             {},
             {"display": "none"},
             {"display": "none"},
+            {"display": "none"},
+            {},
+            {},
+            "Anos da concessão",
+            "Cenários simulados",
+            {},
+            {"display": "none"},
+            {},
             {"display": "none"},
             active_tab,
             base_tab,
@@ -586,46 +778,26 @@ _hydrate_dashboard_content(
 # ==============================================================================
 # CALLBACKS DA DRE
 # ==============================================================================
-@app.callback(Output("dre-filtro-cenario", "options"), Input("dre-filtro-ano", "value"))
-def atualizar_options_cenario_dre(ano_selecionado):
-    col_cenario = "Cenário" if "Cenário" in DATA.columns else DATA.columns[1]
-
-    cenarios_brutos = sorted(DATA[col_cenario].dropna().unique())
-
-    options = []
-    for c in cenarios_brutos:
-        num_match = re.search(r"\d+", str(c))
-        num = int(num_match.group()) if num_match else c
-
-        options.append({"label": f"Cenário {num}", "value": c})
-
-    return options
-
-
 @app.callback(
     Output("tabela-dre-dinamica", "children"),
-    Input("dre-filtro-ano", "value"),
-    Input("dre-filtro-cenario", "value"),
+    Input("years-input", "value"),
+    Input("scenarios-input", "value"),
+    Input("single-year-dropdown", "value"),
+    Input("url", "pathname"),
 )
-def atualizar_tabela_dre(anos, cenarios):
-    df_filtrado = DATA.copy()
+def atualizar_tabela_dre(years, scenarios, single_year_val, pathname):
+    clean_path = (pathname or "/").rstrip("/") or "/"
+    if clean_path == "/dre" and single_year_val is not None:
+        target_year = int(single_year_val)
+    else:
+        selected_years = get_selected_years(years, YEARS)
+        target_year = selected_years[0] if selected_years else min(YEARS)
+    chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
 
-    col_ano = (
-        "ano_num"
-        if "ano_num" in df_filtrado.columns
-        else ("Ano" if "Ano" in df_filtrado.columns else df_filtrado.columns[0])
-    )
-    col_cenario = (
-        "Cenário" if "Cenário" in df_filtrado.columns else df_filtrado.columns[1]
-    )
-
-    if anos is not None:
-        lista_anos = anos if isinstance(anos, list) else [anos]
-        df_filtrado = df_filtrado[df_filtrado[col_ano].isin(lista_anos)]
-
-    if cenarios:
-        lista_cenarios = cenarios if isinstance(cenarios, list) else [cenarios]
-        df_filtrado = df_filtrado[df_filtrado[col_cenario].isin(lista_cenarios)]
+    df_filtrado = DATA[
+        (DATA.ano_num == target_year)
+        & DATA["Cenário"].isin(chosen_scenarios)
+    ].copy()
 
     if df_filtrado.empty:
         return build_dre_table([])
@@ -787,9 +959,11 @@ def atualizar_grafico_melhores_anos(metrica_escolhida):
 
 @app.callback(
     Output("grafico-top10-cenarios", "figure"),
-    [Input("grafico-filtro-ano", "value"), Input("grafico-filtro-metrica", "value")],
+    Input("single-year-dropdown", "value"),
+    Input("years-input", "value"),
+    Input("grafico-filtro-metrica", "value"),
 )
-def atualizar_grafico_top10(ano_selecionado, metrica_escolhida):
+def atualizar_grafico_top10(single_year_val, years_input_val, metrica_escolhida):
     col_ano = (
         "ano_num"
         if "ano_num" in DATA.columns
@@ -804,8 +978,12 @@ def atualizar_grafico_top10(ano_selecionado, metrica_escolhida):
 
     df_trab = DATA.copy()
 
-    # 1. Define o Ano 1 como padrão se nenhum ano estiver selecionado no dropdown (None)
-    ano_efetivo = ano_selecionado if ano_selecionado is not None else 1
+    # Define o ano selecionado na barra lateral (priorizando o dropdown de ano da DRE)
+    if single_year_val is not None:
+        ano_efetivo = int(single_year_val)
+    else:
+        selected_years = get_selected_years(years_input_val, YEARS)
+        ano_efetivo = selected_years[0] if selected_years else 1
 
     df_trab = df_trab[df_trab[col_ano] == ano_efetivo]
 
