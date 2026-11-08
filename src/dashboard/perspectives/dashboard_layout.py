@@ -236,42 +236,44 @@ def build_balanco_table(data, years, scenario):
 
 
 # ==============================================================================
-# FINANCIAL STATEMENTS (DRE / DFC) UNIFIED DESIGN SYSTEM
+# FINANCIAL STATEMENTS (DRE / DFC / BALANÇO) UNIFIED DESIGN SYSTEM
 # ==============================================================================
 STATEMENT_CONTAINER_STYLE = {
-    "backgroundColor": "#f8fafc",
-    "minHeight": "100vh",
-    "padding": "30px",
+    "backgroundColor": "transparent",
     "display": "flex",
     "flexDirection": "column",
     "gap": "24px",
 }
 
 STATEMENT_HEADER_CARD_STYLE = {
-    "backgroundColor": "#63aee7",
-    "padding": "24px",
-    "borderRadius": "8px",
-    "border": "1px solid #e2e8f0",
-    "boxShadow": "0 1px 3px rgba(0,0,0,0.05)",
+    "backgroundColor": "var(--sky)",
+    "padding": "20px",
+    "borderRadius": "var(--radius-lg)",
+    "border": "1px solid rgba(2, 132, 199, 0.2)",
     "textAlign": "center",
+    "boxShadow": "var(--shadow-sm)",
+    "position": "relative",
+    "overflow": "hidden",
 }
 
 STATEMENT_TITLE_STYLE = {
-    "color": "#111111",
-    "margin": "0 0 10px 0",
-    "fontWeight": "bold",
-    "fontFamily": "sans-serif",
-    "fontSize": "22px",
+    "color": "var(--ink)",
+    "margin": "0 0 8px 0",
+    "fontWeight": "600",
+    "fontFamily": "inherit",
+    "fontSize": "1.75rem",
+    "letterSpacing": "-0.025em",
+    "lineHeight": "1.15",
 }
 
 STATEMENT_SUBTITLE_STYLE = {
-    "color": "#501839",
     "opacity": "1",
     "margin": "0 auto",
-    "fontSize": "14px",
-    "fontFamily": "sans-serif",
+    "fontSize": "0.95rem",
+    "fontFamily": "inherit",
     "textWrap": "balance",
-    "maxWidth": "720px",
+    "maxWidth": "760px",
+    "lineHeight": "1.45",
 }
 
 STATEMENT_CONTENT_STYLE = {
@@ -282,24 +284,28 @@ STATEMENT_CONTENT_STYLE = {
 }
 
 STATEMENT_CARD_STYLE = {
-    "backgroundColor": "#ffffff",
-    "borderRadius": "8px",
-    "border": "1px solid #e2e8f0",
-    "padding": "20px",
+    "backgroundColor": "rgba(255, 255, 255, 0.9)",
+    "backdropFilter": "blur(20px) saturate(180%)",
+    "WebkitBackdropFilter": "blur(20px) saturate(180%)",
+    "borderRadius": "var(--radius-lg)",
+    "border": "1px solid var(--line)",
+    "padding": "24px",
+    "boxShadow": "var(--shadow-sm)",
 }
 
 SECTION_TITLE_STYLE = {
-    "color": "#0f172a",
-    "fontSize": "16px",
-    "marginBottom": "16px",
-    "fontWeight": "bold",
+    "color": "var(--ink)",
+    "fontSize": "1.25rem",
+    "marginBottom": "18px",
+    "fontWeight": "600",
+    "letterSpacing": "-0.02em",
+    "fontFamily": "inherit",
 }
 
 FILTER_LABEL_STYLE = {
-    "fontSize": "12px",
-    "fontWeight": "600",
-    "color": "var(--dark-blue)",
-    "marginBottom": "4px",
+    "fontSize": "0.95rem",
+    "color": "var(--ink)",
+    "marginBottom": "6px",
     "display": "block",
 }
 
@@ -405,7 +411,6 @@ def build_dre_table(dre_data):
                         html.Th(
                             "Valor Consolidado",
                             scope="col",
-                            style={"textAlign": "right"},
                         ),
                     ]
                 )
@@ -419,7 +424,7 @@ def build_dre_table(dre_data):
                                 style={
                                     "textAlign": "center",
                                     "fontWeight": "bold",
-                                    "color": "#94a3b8",
+                                    "color": "var(--ink-weak)",
                                 },
                             ),
                             html.Th(row.get("conta", ""), scope="row"),
@@ -516,7 +521,7 @@ def build_statement_page(
     chart2_card = build_statement_card(
         "Melhores Cenários",
         [chart2_filters, dcc.Graph(id=top10_graph_id)],
-        title_color="var(--dark-blue)",
+        title_color="var(--ink)",
     )
 
     return html.Div(
@@ -675,7 +680,18 @@ def create_main_layout(
                         title="Balanço",
                     ),
                 ],
-            )
+            ),
+            html.Button(
+                [
+                    html.Span(className="toggle-sidebar-bar"),
+                    html.Span(className="toggle-sidebar-bar"),
+                    html.Span(className="toggle-sidebar-bar"),
+                ],
+                id="toggle-sidebar-btn",
+                className="toggle-sidebar-btn",
+                title="Abrir / Fechar barra lateral",
+                n_clicks=0,
+            ),
         ],
     )
 
@@ -897,6 +913,7 @@ def create_main_layout(
         children=[
             dcc.Location(id="url", refresh=False),
             dcc.Store(id="simplified-view-active-store"),
+            dcc.Store(id="sidebar-collapsed-store", data=False),
             navbar,
             html.Div(
                 className="pages-container",

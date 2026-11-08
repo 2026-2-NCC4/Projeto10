@@ -176,9 +176,8 @@ def load_data(path: Path) -> pd.DataFrame:
 
     wide["fluxo_investimento"] = col("FLU Investimentos")
 
-    wide["fluxo_financiamento"] = (
-        col("FLU Despesas Financeiras")
-        + col("FLU Distribuição para Acionista")
+    wide["fluxo_financiamento"] = col("FLU Despesas Financeiras") + col(
+        "FLU Distribuição para Acionista"
     )
 
     # --------------------------------------------------------------------------
@@ -192,8 +191,7 @@ def load_data(path: Path) -> pd.DataFrame:
     capital_investido = ativo - pc
     nopat = wide["resultado_operacional"] * 0.66
 
-    wide["roic"] = (nopat / capital_investido.replace(0, float("nan")))
-
+    wide["roic"] = nopat / capital_investido.replace(0, float("nan"))
 
     # --------------------------------------------------------------------------
     # 7.1 INVESTOR DASHBOARD METRICS
@@ -207,9 +205,7 @@ def load_data(path: Path) -> pd.DataFrame:
     emprestimos_lp_investidor = col("BAL Emprest").abs()
 
     # Receita líquida = Receita bruta + Tributos
-    wide["investor_receita_liquida"] = (
-        receita + tributos_investidor
-    )
+    wide["investor_receita_liquida"] = receita + tributos_investidor
 
     # Lucro líquido
     wide["investor_lucro_liquido"] = wide["resultado_liquido"]
@@ -222,16 +218,13 @@ def load_data(path: Path) -> pd.DataFrame:
 
     # Dívida líquida = Empréstimos CP + LP - Caixa
     wide["investor_divida_liquida"] = (
-        emprestimos_cp_investidor
-        + emprestimos_lp_investidor
-        - caixa
+        emprestimos_cp_investidor + emprestimos_lp_investidor - caixa
     )
 
     # Dívida líquida / EBITDA
-    wide["investor_divida_ebitda"] = (
-        wide["investor_divida_liquida"]
-        / wide["ebitda"].replace(0, float("nan"))
-    )
+    wide["investor_divida_ebitda"] = wide["investor_divida_liquida"] / wide[
+        "ebitda"
+    ].replace(0, float("nan"))
 
     # --------------------------------------------------------------------------
     # 8. TERMINAL YEAR ADJUSTMENTS

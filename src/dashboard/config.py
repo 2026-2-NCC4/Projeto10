@@ -1,8 +1,11 @@
 # ==============================================================================
 # DESIGN SYSTEM TOKENS (TYPOGRAPHY & PALETTE)
 # ==============================================================================
-# System font stack prioritizing native OS rendering for clean modern typography
-FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+# Apple-inspired system font stack prioritizing native rendering, optical clarity and tracking
+FONT_STACK = (
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', "
+    "'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+)
 
 # Semantic color palette used across charts, badges, and indicator cards:
 # - ink: Primary text, axis lines, titles
@@ -10,12 +13,12 @@ FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, 
 # - plum / amber / red: Deep accents, EBITDA, equity, risk highlights, debt
 COLORS = {
     "ink": "#111111",
-    "teal": "#55a9e8",
-    "blue": "#55a9e8",
+    "teal": "#0284c7",
+    "blue": "#0284c7",
     "amber": "#501839",
     "red": "#501839",
     "plum": "#501839",
-    "sky": "#55a9e8",
+    "sky": "#63aee7",
 }
 
 

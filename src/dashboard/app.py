@@ -97,7 +97,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # Web framework and interactive components
-from dash import Dash, Input, Output, State, callback_context, dcc, html, no_update
+from dash import Dash, Input, Output, State, callback_context, ctx, dcc, html, no_update
 
 # Local helper for custom polar petal geometry (Bezier curve coordinates)
 from petals import petal
@@ -488,82 +488,80 @@ def describe_perspective(perspective):
 # BIDIRECTIONAL SLIDER & TEXT INPUT SYNCHRONIZATION
 # ==============================================================================
 @app.callback(
+    Output("years-input", "value"),
     Output("years", "value"),
     Input("years-input", "value"),
-    State("years", "value"),
-    prevent_initial_call=True,
-)
-def sync_years_input_to_slider(text_val, current_slider):
-    """Update years slider when user types in the input box."""
-    if not text_val:
-        return no_update
-    selected = get_selected_years(text_val, YEARS)
-    if not selected:
-        return no_update
-    target = [min(selected), max(selected)]
-    if current_slider == target:
-        return no_update
-    return target
-
-
-@app.callback(
-    Output("years-input", "value"),
     Input("years", "value"),
     Input("url", "pathname"),
-    State("years-input", "value"),
-)
-def sync_years_slider_to_input(slider_val, pathname, current_text):
-    """Update years input text when user moves the slider or navigates pages."""
-    clean_path = (pathname or "/").rstrip("/") or "/"
-    first, last = slider_val if slider_val else (min(YEARS), max(YEARS))
-    if clean_path == "/dre":
-        target = str(first)
-    else:
-        target = str(first) if first == last else f"{first}-{last}"
-
-    if current_text == target:
-        return no_update
-    return target
-
-
-@app.callback(
-    Output("scenarios", "value"),
-    Input("scenarios-input", "value"),
-    State("scenarios", "value"),
     prevent_initial_call=True,
 )
-def sync_scenarios_input_to_slider(text_val, current_slider):
-    """Update scenarios slider when user types in the input box."""
-    if not text_val:
-        return no_update
-    nums = parse_selection_string(text_val)
-    valid_nums = [n for n in nums if 1 <= n <= len(SCENARIOS)]
-    if not valid_nums:
-        return no_update
-    target = [min(valid_nums), max(valid_nums)]
-    if current_slider == target:
-        return no_update
-    return target
+def sync_years(input_val, slider_val, pathname):
+    """Keep years slider and text input synchronized without circular dependency errors."""
+    triggered_id = ctx.triggered_id
+    clean_path = (pathname or "/").rstrip("/") or "/"
+
+    if triggered_id == "years-input":
+        if not input_val:
+            return no_update, no_update
+        selected = get_selected_years(input_val, YEARS)
+        if not selected:
+            return no_update, no_update
+        target_slider = [min(selected), max(selected)]
+        if slider_val == target_slider:
+            return no_update, no_update
+        return no_update, target_slider
+
+    elif triggered_id in ("years", "url"):
+        first, last = slider_val if slider_val else (min(YEARS), max(YEARS))
+        if clean_path == "/dre":
+            target_text = str(first)
+        else:
+            target_text = str(first) if first == last else f"{first}-{last}"
+
+        if input_val == target_text:
+            return no_update, no_update
+        return target_text, no_update
+
+    return no_update, no_update
 
 
 @app.callback(
     Output("scenarios-input", "value"),
+    Output("scenarios", "value"),
+    Input("scenarios-input", "value"),
     Input("scenarios", "value"),
     Input("url", "pathname"),
-    State("scenarios-input", "value"),
+    prevent_initial_call=True,
 )
-def sync_scenarios_slider_to_input(slider_val, pathname, current_text):
-    """Update scenarios input text when user moves the slider or navigates pages."""
+def sync_scenarios(input_val, slider_val, pathname):
+    """Keep scenarios slider and text input synchronized without circular dependency errors."""
+    triggered_id = ctx.triggered_id
     clean_path = (pathname or "/").rstrip("/") or "/"
-    first, last = slider_val if slider_val else (1, len(SCENARIOS))
-    if clean_path in ("/dfc", "/balanco"):
-        target = str(first)
-    else:
-        target = str(first) if first == last else f"{first}-{last}"
 
-    if current_text == target:
-        return no_update
-    return target
+    if triggered_id == "scenarios-input":
+        if not input_val:
+            return no_update, no_update
+        nums = parse_selection_string(input_val)
+        valid_nums = [n for n in nums if 1 <= n <= len(SCENARIOS)]
+        if not valid_nums:
+            return no_update, no_update
+        target_slider = [min(valid_nums), max(valid_nums)]
+        if slider_val == target_slider:
+            return no_update, no_update
+        return no_update, target_slider
+
+    elif triggered_id in ("scenarios", "url"):
+        first, last = slider_val if slider_val else (1, len(SCENARIOS))
+        if clean_path in ("/dfc", "/balanco"):
+            target_text = str(first)
+        else:
+            target_text = str(first) if first == last else f"{first}-{last}"
+
+        if input_val == target_text:
+            return no_update, no_update
+        return target_text, no_update
+
+    return no_update, no_update
 
 
 @app.callback(
@@ -599,6 +597,26 @@ app.clientside_callback(
     Output("simplified-view-active-store", "data"),
     Input("toggle-simplified-view", "value"),
     prevent_initial_call=False,
+)
+
+
+app.clientside_callback(
+    """
+    function(n_clicks, isCollapsed) {
+        if (n_clicks === undefined || n_clicks === null || n_clicks === 0) {
+            return isCollapsed || false;
+        }
+        var nextState = !isCollapsed;
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.classList.toggle('sidebar-collapsed', nextState);
+        }
+        return nextState;
+    }
+    """,
+    Output("sidebar-collapsed-store", "data"),
+    Input("toggle-sidebar-btn", "n_clicks"),
+    State("sidebar-collapsed-store", "data"),
+    prevent_initial_call=True,
 )
 
 
@@ -679,7 +697,7 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "none"},
             {"display": "none"},
-            "Ano da concessão (1 ano)",
+            "Ano da concessão",
             "Cenários simulados",
             {"display": "none"},
             {},
@@ -700,7 +718,7 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "none"},
             "Anos da concessão",
-            "Cenário simulado (1 cenário)",
+            "Cenário simulado",
             {},
             {"display": "none"},
             {"display": "none"},
@@ -720,7 +738,7 @@ def display_page(pathname):
             {"display": "none"},
             {"display": "none"},
             "Anos da concessão",
-            "Cenário simulado (1 cenário)",
+            "Cenário simulado",
             {},
             {"display": "none"},
             {"display": "none"},

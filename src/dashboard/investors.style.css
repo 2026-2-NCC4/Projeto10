@@ -2,409 +2,433 @@
    LAYOUT PRINCIPAL DO INVESTIDOR
    ========================================================= */
 .investor-main-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
 }
 
 /* Linha de cima: Lado a lado (2 colunas) */
 .investor-top-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
-    gap: 24px;
-    width: 100%;
-    align-items: stretch;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+  gap: 24px;
+  width: 100%;
+  align-items: stretch;
 }
 
 /* Linha de baixo: Um abaixo do outro (1 coluna) */
 .investor-bottom-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* Uma coluna, ocupando 100% */
-    gap: 24px;
-    width: 100%;
+  display: grid;
+  grid-template-columns: 1fr; /* Uma coluna, ocupando 100% */
+  gap: 24px;
+  width: 100%;
 }
 
 /* Responsividade: Se a tela for pequena (celular/tablet), joga o topo para 1 coluna */
 @media (max-width: 1024px) {
-    .investor-top-grid {
-        grid-template-columns: 1fr;
-    }
+  .investor-top-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* =========================================================
    PAINÉIS GERAIS
    ========================================================= */
-.investor-panel, 
+.investor-panel,
 .performance-panel-container {
-    background-color: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    padding: 22px;
-    width: 100%;
-    box-sizing: border-box;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 22px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cashflow-panel {
-    border: 1px solid #E4EAF0;
-    padding: 18px;
+  border: 1px solid #e4eaf0;
+  padding: 18px;
 }
 
 .investor-panel-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-    margin-top: 0;
-    margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 0;
+  margin-bottom: 16px;
 }
 
 /* =========================================================
    PAINEL DE INDICADORES (GAUGE + LISTA LADO A LADO)
    ========================================================= */
 .panel-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .panel-header-icon {
-    font-size: 25px;
-    color: #2563EB;
-    font-weight: 700;
+  font-size: 25px;
+  color: #2563eb;
+  font-weight: 700;
 }
 
 .panel-header-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111827;
-    margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
 }
 
 /* Aqui voltamos para o formato lado a lado (gauge na esquerda, ROE/ROIC na direita) */
 .performance-body {
-    display: flex;
-    flex-direction: row; 
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 15px;
 }
 
 .performance-gauge-wrapper {
-    flex: 0.9;
-    min-width: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  flex: 0.9;
+  min-width: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .performance-divider {
-    width: 1px;
-    background-color: #E5E7EB;
-    margin: 8px 10px;
-    align-self: stretch;
+  width: 1px;
+  background-color: #e5e7eb;
+  margin: 8px 10px;
+  align-self: stretch;
 }
 
 .performance-indicators {
-    flex: 1.4;
-    min-width: 220px;
+  flex: 1.4;
+  min-width: 220px;
 }
 
 /* Gauge */
 .gauge-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
 }
 
 .gauge-arc {
-    position: relative;
-    width: 180px;
-    height: 90px;
-    overflow: hidden;
-    margin: 8px auto 0;
-    border-radius: 180px 180px 0 0;
+  position: relative;
+  width: 180px;
+  height: 90px;
+  overflow: hidden;
+  margin: 8px auto 0;
+  border-radius: 180px 180px 0 0;
 }
 
 .gauge-inner-cover {
-    position: absolute;
-    width: 130px;
-    height: 65px;
-    left: 25px;
-    bottom: 0;
-    background-color: #FFFFFF;
-    border-radius: 130px 130px 0 0;
+  position: absolute;
+  width: 130px;
+  height: 65px;
+  left: 25px;
+  bottom: 0;
+  background-color: #ffffff;
+  border-radius: 130px 130px 0 0;
 }
 
 .gauge-value {
-    font-size: 28px;
-    font-weight: 750;
-    color: #111827;
-    margin-top: 8px;
+  font-size: 28px;
+  font-weight: 750;
+  color: #111827;
+  margin-top: 8px;
 }
 
 .gauge-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 12px;
 }
 
 /* Itens de Performance */
 .performance-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .performance-item:last-child {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .performance-icon {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    border-radius: 10px;
-    background-color: #F1F5F9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 700;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 10px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .performance-text {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .performance-label {
-    font-size: 12px;
-    color: #64748B;
-    font-weight: 500;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .performance-value {
-    font-size: 17px;
-    font-weight: 700;
-    color: #111827;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
 }
 
 /* Badges de Variação */
 .investor-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.badge-neutral { color: #64748B; background-color: #F1F5F9; }
-.badge-positive { color: #15803D; background-color: #DCFCE7; }
-.badge-negative { color: #DC2626; background-color: #FEE2E2; }
+.badge-neutral {
+  color: #64748b;
+  background-color: #f1f5f9;
+}
+.badge-positive {
+  color: #15803d;
+  background-color: #dcfce7;
+}
+.badge-negative {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
 
 /* =========================================================
    COMPOSIÇÃO DO ATIVO (DONUT LADO A LADO COM LEGENDA)
    ========================================================= */
 .asset-composition-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Gráfico e legenda lado a lado dentro do card */
-    align-items: center;
-    gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Gráfico e legenda lado a lado dentro do card */
+  align-items: center;
+  gap: 10px;
 }
 
 .legend-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
 }
 
 .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-bottom: 14px;
-    font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  font-size: 13px;
 }
 
 .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-.legend-label { color: #374151; }
-.legend-value { font-weight: 600; margin-left: auto; color: #111827; }
+.legend-label {
+  color: #374151;
+}
+.legend-value {
+  font-weight: 600;
+  margin-left: auto;
+  color: #111827;
+}
 
 /* =========================================================
    CABEÇALHOS E LEGENDAS DOS GRÁFICOS GRANDES
    ========================================================= */
 .panel-header-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
 }
 
 .panel-expand-icon {
-    font-size: 22px;
-    color: #64748B;
-    cursor: default;
+  font-size: 22px;
+  color: #64748b;
+  cursor: default;
 }
 
 .cashflow-header-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .legend-inline-container {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .legend-item-inline {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #555;
 }
 
 .legend-square {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-    display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 /* Responsividade para celular */
 @media (max-width: 600px) {
-    .asset-composition-grid { grid-template-columns: 1fr; }
-    .performance-body { flex-direction: column; }
-    .performance-divider { display: none; }
+  .asset-composition-grid {
+    grid-template-columns: 1fr;
+  }
+  .performance-body {
+    flex-direction: column;
+  }
+  .performance-divider {
+    display: none;
+  }
 }
 
 /* --- CARDS COLORIDOS --- */
 .kpi-card-hover {
-    border-radius: 12px;
-    padding: 16px 20px;
-    border: 1px solid transparent;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: default;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid transparent;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .kpi-card-hover:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .kpi-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .kpi-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kpi-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
 }
 
 .kpi-body {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
 .kpi-value {
-    font-size: 26px;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.5px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
 }
 
 .kpi-sparkline {
-    width: 70px;
-    height: 24px;
-    opacity: 0.9;
+  width: 70px;
+  height: 24px;
+  opacity: 0.9;
 }
 
 .kpi-footer {
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .kpi-variation-text {
-    color: #6B7280;
+  color: #6b7280;
 }
 /* Container Principal da Página */
 .statement-container {
-    background-color: #f8fafc;
-    min-height: 100vh;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* Card do Cabeçalho */
 .statement-header-card {
-    background-color: #ffffff;
-    padding: 24px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    text-align: center;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-align: center;
 }
 
 /* Título */
 .statement-title {
-    color: #111111;
-    margin: 0 0 10px 0;
-    font-weight: bold;
-    font-family: sans-serif;
-    font-size: 22px;
+  color: #111111;
+  margin: 0 0 10px 0;
+  font-family: sans-serif;
+  font-size: 22px;
 }
 
 /* Subtítulo */
 .statement-subtitle {
-    color: #4e4e4e;
-    margin: 0 auto;
-    font-size: 14px;
-    font-family: sans-serif;
-    text-wrap: balance;
-    max-width: 720px;
+  color: #4e4e4e;
+  margin: 0 auto;
+  font-size: 14px;
+  font-family: sans-serif;
+  text-wrap: balance;
+  max-width: 720px;
 }
