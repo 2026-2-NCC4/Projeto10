@@ -30,7 +30,7 @@ def build_operational_overview_tiles(latest, prev):
             money(latest.resultado_liquido.median()),
             delta("resultado_liquido"),
             subtitle="Resultado após despesas e impostos",
-            icon="cuida:sort-ascending-duotone",
+            icon="boxicons:water-drop-alt",
         ),
         card(
             "Geração de caixa",

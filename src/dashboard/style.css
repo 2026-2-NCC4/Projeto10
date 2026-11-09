@@ -5,12 +5,14 @@
 :root {
   /* Colour palette - Preserving Brand Identity with Apple Vibrancy */
   --ink: #111111;
+  --white: #ffffff;
   --ink-weak: #52525b;
   --line: rgba(0, 0, 0, 0.08);
   --line-strong: rgba(0, 0, 0, 0.16);
   --fill: #f4f4f5;
   --fill-hover: #e4e4e7;
   --plum: #501839;
+  --plum-medium-dark: #7a4665;
   --plum-medium: #a57592;
   --plum-weak: #f1d6e6;
   --sky: #63aee7;
@@ -1672,4 +1674,47 @@ div[class*="dash-slider-range"] {
   .dash-dropdown {
     border-width: 2px !important;
   }
+}
+
+/* ============================================================
+   Botão de exportação Excel
+   ============================================================ */
+   .export-excel-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid #501839;
+    background-color: #501839;
+    color: #ffffff;
+    font-weight: 530;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background-color 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease,
+                transform 0.05s ease;
+}
+
+.export-excel-btn:hover {
+    background-color: #7a4665;   
+    border-color: #7a4665;
+}
+
+/* Active (enquanto clica): "afunda" levemente */
+.export-excel-btn:active {
+    transform: translateY(1px);
+}
+
+/* Focus visível (acessibilidade — teclado) */
+.export-excel-btn:focus-visible {
+    outline: 2px solid #0369a1;
+    outline-offset: 2px;
+}
+
+
+.export-excel-btn svg {
+    display: block;
+    flex-shrink: 0;
 }

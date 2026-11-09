@@ -84,6 +84,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # ==============================================================================
 import sys, os
 
+from io import BytesIO
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.utils import get_column_letter
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from pathlib import Path
@@ -141,6 +146,10 @@ from perspectives.dashboard_layout import (
     build_dfc_table,
     build_dre_table,
     create_main_layout,
+    DRE_ROWS,
+    DFC_ROWS,
+    BALANCO_ROWS,
+    _balanco_cell_value,
 )
 
 # ==============================================================================
@@ -424,7 +433,7 @@ def render_content(
         )
 
     if perspective == "investidores":
-        return render_investor_view(  # <--- Adicionado o "return" aqui
+        return render_investor_view(  
             index_fig=index_fig,
             subtitle=subtitle,
             latest=latest,
@@ -440,7 +449,6 @@ def render_content(
             latest_year=latest_year,
         )
 
-    # Default: Management / Executive
     return render_management_view(
         index_fig,
         subtitle,
@@ -805,11 +813,13 @@ _hydrate_dashboard_content(
 )
 def atualizar_tabela_dre(years, scenarios, single_year_val, pathname):
     clean_path = (pathname or "/").rstrip("/") or "/"
+
     if clean_path == "/dre" and single_year_val is not None:
         target_year = int(single_year_val)
     else:
         selected_years = get_selected_years(years, YEARS)
         target_year = selected_years[0] if selected_years else min(YEARS)
+
     chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
 
     df_filtrado = DATA[
@@ -825,90 +835,23 @@ def atualizar_tabela_dre(years, scenarios, single_year_val, pathname):
     def formata_moeda(valor):
         if pd.isna(valor):
             return "R$ 0,00"
-        texto = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        texto = (
+            f"{valor:,.2f}"
+            .replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
         return f"R$ {texto}"
 
     dre_vertical = [
         {
-            "sinal": "+",
-            "conta": "Receita Bruta",
-            "valor": formata_moeda(linha.get("DRE Receita", 0)),
-        },
-        {
-            "sinal": "-",
-            "conta": "Tributos",
-            "valor": formata_moeda(linha.get("DRE Tributos", 0)),
-        },
-        {
-            "sinal": "-",
-            "conta": "Custos",
-            "valor": formata_moeda(linha.get("DRE Custos", 0)),
-        },
-        {
-            "sinal": "-",
-            "conta": "Depreciação e Amortização",
-            "valor": formata_moeda(linha.get("DRE Depreciacao e Amortizacao", 0)),
-        },
-        {
-            "sinal": "=",
-            "conta": "Resultado Operacional",
-            "valor": formata_moeda(linha.get("DRE Resultado Operacional", 0)),
-        },
-        {
-            "sinal": "+",
-            "conta": "Receitas Financeiras",
-            "valor": formata_moeda(linha.get("DRE Receitas Financeiras", 0)),
-        },
-        {
-            "sinal": "-",
-            "conta": "Despesas Financeiras",
-            "valor": formata_moeda(linha.get("DRE Despesas Financeiras", 0)),
-        },
-        {
-            "sinal": "=",
-            "conta": "Resultado Financeiro",
-            "valor": formata_moeda(linha.get("DRE Resultado Financeiro", 0)),
-        },
-        {
-            "sinal": " ",
-            "conta": "Outros Resultados Operacionais",
-            "valor": formata_moeda(linha.get("DRE Outros Resultados Operacionais", 0)),
-        },
-        {
-            "sinal": "=",
-            "conta": "Resultado Antes do Imposto de Renda",
-            "valor": formata_moeda(
-                linha.get("DRE Resultado Antes do Imposto de Renda", 0)
-            ),
-        },
-        {
-            "sinal": "-",
-            "conta": "Imposto de Renda e Contribuição Social",
-            "valor": formata_moeda(
-                linha.get("DRE Imposto de Renda e Contribuicao Social", 0)
-            ),
-        },
-        {
-            "sinal": "=",
-            "conta": "Resultado Líquido",
-            "valor": formata_moeda(linha.get("DRE Resultado Liquido", 0)),
-        },
-        {
-            "sinal": "=",
-            "conta": "Resultado Líquido após Equivalência",
-            "valor": formata_moeda(
-                linha.get("DRE Resultado Liquido apos Equivalencia", 0)
-            ),
-        },
-        {
-            "sinal": " ",
-            "conta": "EBITDA",
-            "valor": formata_moeda(linha.get("DRE EBITDA", 0)),
-        },
+            "conta": conta,                                  
+            "valor": formata_moeda(linha.get(coluna, 0)),    
+        }
+        for conta, coluna in DRE_ROWS
     ]
 
     return build_dre_table(dre_vertical)
-
 
 @app.callback(
     Output("grafico-melhores-anos-cenarios", "figure"),
@@ -996,7 +939,6 @@ def atualizar_grafico_top10(single_year_val, years_input_val, metrica_escolhida)
 
     df_trab = DATA.copy()
 
-    # Define o ano selecionado na barra lateral (priorizando o dropdown de ano da DRE)
     if single_year_val is not None:
         ano_efetivo = int(single_year_val)
     else:
@@ -1008,7 +950,7 @@ def atualizar_grafico_top10(single_year_val, years_input_val, metrica_escolhida)
     if df_trab.empty or metrica_alvo not in df_trab.columns:
         return px.line(title="Sem dados disponíveis para esta seleção")
 
-    # Extrai o número do cenário e cria o rótulo "Cenário X"
+    # Extrai o número do cenário (SEM o prefixo "Cenário ")
     num_cenario = (
         pd.to_numeric(
             df_trab[col_cenario].astype(str).str.extract(r"(\d+)", expand=False),
@@ -1017,30 +959,35 @@ def atualizar_grafico_top10(single_year_val, years_input_val, metrica_escolhida)
         .fillna(0)
         .astype(int)
     )
-    df_trab["Cenario_Formatado"] = "Cenário " + num_cenario.astype(str)
+    df_trab["Cenario_Num"] = num_cenario.astype(str)
 
     # Ordena pelos 10 melhores
     top10 = df_trab.sort_values(by=metrica_alvo, ascending=False).head(10)
 
-    # Gráfico de Linha com Marcadores (bolinhas)
     fig = px.line(
         top10,
-        x="Cenario_Formatado",
+        x="Cenario_Num",                       # <- eixo X só com o número
         y=metrica_alvo,
         markers=True,
         text=top10[metrica_alvo].apply(lambda v: f"{v:,.0f}".replace(",", ".")),
         labels={
-            "Cenario_Formatado": "Cenário Simulado",
+            "Cenario_Num": "Cenário",          # <- título do eixo X
             metrica_alvo: f"{nome_metrica_label} (R$)",
         },
     )
 
-    # Estilização visual mantendo as cores e marcadores circulares
     fig.update_traces(
-        line_color="#63aee7",
+        line_color="#7a4665",
         line_width=3,
-        marker=dict(size=10, color="#7ab6e4", symbol="circle"),
+        marker=dict(size=10, color="#7a4665", symbol="circle"),
         textposition="top center",
+    )
+
+    # Força o eixo X a tratar os valores como categóricos (na ordem do top10)
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=top10["Cenario_Num"].tolist(),
     )
 
     fig.update_layout(
@@ -1054,6 +1001,370 @@ def atualizar_grafico_top10(single_year_val, years_input_val, metrica_escolhida)
 
     return fig
 
+
+def criar_excel(titulo, subtitulo, cabecalhos, linhas, nome_aba):
+    """Cria um arquivo Excel formatado e retorna seus bytes."""
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = nome_aba
+
+    quantidade_colunas = len(cabecalhos)
+
+    # Título
+    ws.merge_cells(
+        start_row=1,
+        start_column=1,
+        end_row=1,
+        end_column=quantidade_colunas,
+    )
+
+    celula_titulo = ws.cell(row=1, column=1, value=titulo)
+    celula_titulo.font = Font(
+        name="Arial",
+        size=16,
+        bold=True,
+        color="FFFFFF",
+    )
+    celula_titulo.fill = PatternFill(
+        "solid",
+        fgColor="0F172A",
+    )
+    celula_titulo.alignment = Alignment(
+        horizontal="left",
+        vertical="center",
+    )
+
+    ws.row_dimensions[1].height = 32
+
+    # Subtítulo
+    ws.merge_cells(
+        start_row=2,
+        start_column=1,
+        end_row=2,
+        end_column=quantidade_colunas,
+    )
+
+    celula_subtitulo = ws.cell(row=2, column=1, value=subtitulo)
+    celula_subtitulo.font = Font(
+        name="Arial",
+        size=10,
+        italic=True,
+        color="4E4E4E",
+    )
+
+    # Cabeçalho da tabela
+    linha_cabecalho = 4
+
+    for coluna, nome in enumerate(cabecalhos, start=1):
+        celula = ws.cell(
+            row=linha_cabecalho,
+            column=coluna,
+            value=nome,
+        )
+        celula.font = Font(bold=True, color="FFFFFF")
+        celula.fill = PatternFill("solid", fgColor="0284C7")
+        celula.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+        )
+
+    # Dados
+    borda_total = Border(
+        top=Side(style="thin", color="0284C7")
+    )
+
+    for numero_linha, registro in enumerate(linhas, start=5):
+        valores = registro["valores"]
+        tipo = registro.get("tipo", "item")
+
+        for coluna, valor in enumerate(valores, start=1):
+            celula = ws.cell(
+                row=numero_linha,
+                column=coluna,
+                value=valor,
+            )
+
+            celula.alignment = Alignment(
+                vertical="center",
+                horizontal=(
+                    "left"
+                    if coluna == 1 or (cabecalhos[0] == "" and coluna == 2)
+                    else "right"
+                ),
+            )
+
+            # Valores financeiros continuam sendo números no Excel
+            if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+                celula.number_format = (
+                    'R$ #,##0.00;[Red](R$ #,##0.00);-'
+                )
+
+            if tipo == "section":
+                celula.font = Font(bold=True, color="0F172A")
+                celula.fill = PatternFill(
+                    "solid",
+                    fgColor="CEE7F6",
+                )
+
+            elif tipo == "total":
+                celula.font = Font(bold=True, color="0F172A")
+                celula.border = borda_total
+
+    # Largura automática das colunas
+    for coluna in range(1, quantidade_colunas + 1):
+        letra = get_column_letter(coluna)
+
+        maior_tamanho = max(
+            len(str(ws.cell(row=linha, column=coluna).value or ""))
+            for linha in range(1, ws.max_row + 1)
+        )
+
+        ws.column_dimensions[letra].width = min(
+            max(maior_tamanho + 4, 16),
+            38,
+        )
+
+    ws.freeze_panes = "B5"
+    ws.auto_filter.ref = (
+        f"A4:{get_column_letter(quantidade_colunas)}{ws.max_row}"
+    )
+
+    ws.sheet_view.showGridLines = False
+
+    # Prepara o arquivo na memória
+    arquivo = BytesIO()
+    wb.save(arquivo)
+    arquivo.seek(0)
+
+    return arquivo.getvalue()
+
+# ==============================================================================
+# CALLBACKS DA DRE
+# ==============================================================================
+@app.callback(
+    Output("download-dre", "data"),
+    Input("export-dre-btn", "n_clicks"),
+    State("years-input", "value"),
+    State("scenarios-input", "value"),
+    State("single-year-dropdown", "value"),
+    State("url", "pathname"),
+    prevent_initial_call=True,
+)
+def exportar_dre(n_clicks, years, scenarios, single_year_val, pathname):
+
+    if not n_clicks:
+        return no_update
+
+    clean_path = (pathname or "/").rstrip("/") or "/"
+
+    if clean_path == "/dre" and single_year_val is not None:
+        target_year = int(single_year_val)
+    else:
+        selected_years = get_selected_years(years, YEARS)
+        target_year = selected_years[0] if selected_years else min(YEARS)
+
+    chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
+
+    df_filtrado = DATA[
+        (DATA.ano_num == target_year)
+        & DATA["Cenário"].isin(chosen_scenarios)
+    ].copy()
+
+    linha = df_filtrado.median(numeric_only=True)
+
+    contas = [
+        ("(+) Receita Bruta",                            "DRE Receita"),
+        ("(-) Tributos",                                 "DRE Tributos"),
+        ("(-) Custos",                                   "DRE Custos"),
+        ("(-) Depreciação e Amortização",                "DRE Depreciacao e Amortizacao"),
+        ("(=) Resultado Operacional",                    "DRE Resultado Operacional"),
+        ("(+) Receitas Financeiras",                     "DRE Receitas Financeiras"),
+        ("(-) Despesas Financeiras",                     "DRE Despesas Financeiras"),
+        ("(=) Resultado Financeiro",                     "DRE Resultado Financeiro"),
+        ("( ) Outros Resultados Operacionais",           "DRE Outros Resultados Operacionais"),
+        ("(=) Resultado Antes do Imposto de Renda",      "DRE Resultado Antes do Imposto de Renda"),
+        ("(-) Imposto de Renda e Contribuição Social",   "DRE Imposto de Renda e Contribuicao Social"),
+        ("(=) Resultado Líquido",                        "DRE Resultado Liquido"),
+        ("(=) Resultado Líquido após Equivalência",      "DRE Resultado Liquido apos Equivalencia"),
+        ("( ) EBITDA",                                   "DRE EBITDA"),
+    ]
+
+    linhas = []
+
+    for conta, coluna in contas:          # <- 2 elementos, não 3
+        valor = linha.get(coluna, 0)
+
+        if pd.isna(valor):
+            valor = 0.0
+
+        linhas.append({
+            "valores": [conta, float(valor)],   # <- 2 valores, não 3
+            "tipo": (
+                "total"
+                if conta.startswith("(=)") or conta == "( ) EBITDA"
+                else "item"
+            ),
+        })
+
+    arquivo = criar_excel(
+        "Demonstração do Resultado do Exercício",
+        f"Ano {target_year} | Mediana de {len(chosen_scenarios)} cenário(s)",
+        ["Descrição da Conta", "Valor Consolidado"],   # <- 2 cabeçalhos, não 3
+        linhas,
+        "DRE",
+    )
+
+    return dcc.send_bytes(
+        arquivo,
+        f"DRE_Ano_{target_year}.xlsx",
+    )
+
+@app.callback(
+    Output("download-dfc", "data"),
+    Input("export-dfc-btn", "n_clicks"),
+    State("years-input", "value"),
+    State("scenarios-input", "value"),
+    State("single-scenario-dropdown", "value"),
+    State("url", "pathname"),
+    prevent_initial_call=True,
+)
+
+def exportar_dfc(n_clicks, years, scenarios, single_scenario_val, pathname):
+
+    if not n_clicks:
+        return no_update
+
+    clean_path = (pathname or "/").rstrip("/") or "/"
+
+    selected_years = get_selected_years(years, YEARS)
+
+    if clean_path == "/dfc" and single_scenario_val is not None:
+        single_scenario = single_scenario_val
+    else:
+        chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
+        single_scenario = chosen_scenarios[0] if chosen_scenarios else SCENARIOS[0]
+
+    cash_flow = (
+        DATA.loc[DATA["Cenário"].eq(single_scenario)]
+        .set_index("Ano")
+    )
+
+    colunas_anos = [f"Ano {year}" for year in selected_years]
+
+    linhas = []
+
+    for label, account in DFC_ROWS:
+        valores = [label]
+
+        for ano in colunas_anos:
+            valor = (
+                cash_flow.at[ano, account]
+                if ano in cash_flow.index and account in cash_flow.columns
+                else 0.0
+            )
+
+            if pd.isna(valor):
+                valor = 0.0
+
+            valores.append(float(valor))
+
+        tipo = (
+            "total"
+            if account in {"FLU Geracao de Caixa", "FLU Saldo Final"}
+            else "item"
+        )
+
+        linhas.append({
+            "valores": valores,
+            "tipo": tipo,
+        })
+
+    arquivo = criar_excel(
+        "Demonstração dos Fluxos de Caixa",
+        f"Cenário: {single_scenario}",
+        ["Descrição da Conta"] + colunas_anos,
+        linhas,
+        "DFC",
+    )
+
+    return dcc.send_bytes(
+        arquivo,
+        f"DFC_{single_scenario}.xlsx",
+    )
+
+@app.callback(
+    Output("download-balanco", "data"),
+    Input("export-balanco-btn", "n_clicks"),
+    State("years-input", "value"),
+    State("scenarios-input", "value"),
+    State("single-scenario-dropdown", "value"),
+    State("url", "pathname"),
+    prevent_initial_call=True,
+)
+
+def exportar_balanco(n_clicks, years, scenarios, single_scenario_val, pathname):
+
+    if not n_clicks:
+        return no_update
+
+    clean_path = (pathname or "/").rstrip("/") or "/"
+
+    selected_years = get_selected_years(years, YEARS)
+
+    if clean_path == "/balanco" and single_scenario_val is not None:
+        single_scenario = single_scenario_val
+    else:
+        chosen_scenarios = get_selected_scenarios(scenarios, SCENARIOS)
+        single_scenario = chosen_scenarios[0] if chosen_scenarios else SCENARIOS[0]
+
+    balance_sheet = (
+        DATA.loc[DATA["Cenário"].eq(single_scenario)]
+        .set_index("Ano")
+    )
+
+    colunas_anos = [f"Ano {year}" for year in selected_years]
+
+    linhas = []
+
+    for label, account, kind in BALANCO_ROWS:
+
+        valores = [label]
+
+        for ano in colunas_anos:
+
+            if kind == "section":
+                valores.append(None)
+                continue
+
+            valor = _balanco_cell_value(
+                balance_sheet,
+                ano,
+                account,
+            )
+
+            if pd.isna(valor):
+                valor = 0.0
+
+            valores.append(float(valor))
+
+        linhas.append({
+            "valores": valores,
+            "tipo": kind,
+        })
+
+    arquivo = criar_excel(
+        "Balanço Patrimonial",
+        f"Cenário: {single_scenario}",
+        ["Descrição da Conta"] + colunas_anos,
+        linhas,
+        "Balanço",
+    )
+
+    return dcc.send_bytes(
+        arquivo,
+        f"Balanco_{single_scenario}.xlsx",
+    )
 
 if __name__ == "__main__":
     # To run in debug mode for development (auto-reload on save, detailed in-browser debugger):

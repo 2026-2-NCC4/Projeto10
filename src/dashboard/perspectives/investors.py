@@ -474,7 +474,6 @@ def _evolution_result_panel(data):
     fig = go.Figure()
 
     for indice, config in enumerate(configuracoes):
-        # Barras em azul-escuro
         fig.add_trace(
             go.Bar(
                 x=anos,
@@ -534,38 +533,6 @@ def _evolution_result_panel(data):
         visibilidade[indice * 2] = True
         visibilidade[indice * 2 + 1] = True
 
-        botoes.append(
-            dict(
-                label=config["nome"],
-                method="update",
-                args=[
-                    {
-                        "visible": visibilidade,
-                    },
-                    {
-                        "yaxis": {
-                            "title": {
-                                "text": config["eixo"],
-                                "font": {
-                                    "color": preto,
-                                    "size": 12,
-                                },
-                            },
-                            "rangemode": "tozero",
-                            "showgrid": True,
-                            "gridcolor": cinza_grid,
-                            "gridwidth": 1,
-                            "showline": False,
-                            "zeroline": False,
-                            "tickfont": {
-                                "color": preto,
-                                "size": 11,
-                            },
-                        }
-                    },
-                ],
-            )
-        )
 
     fig.update_layout(
         height=370,

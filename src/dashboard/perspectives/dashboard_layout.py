@@ -2,6 +2,24 @@ import re
 from dash import html, dcc, dash_table
 import pandas as pd
 from ui_elements import row, panel
+from dash_iconify import DashIconify
+
+DRE_ROWS = (
+    ("(+) Receita Bruta",                               "DRE Receita"),
+    ("(-) Tributos",                                    "DRE Tributos"),
+    ("(-) Custos",                                      "DRE Custos"),
+    ("(-) Depreciação e Amortização",                   "DRE Depreciacao e Amortizacao"),
+    ("(=) Resultado Operacional",                       "DRE Resultado Operacional"),
+    ("(+) Receitas Financeiras",                        "DRE Receitas Financeiras"),
+    ("(-) Despesas Financeiras",                        "DRE Despesas Financeiras"),
+    ("(=) Resultado Financeiro",                        "DRE Resultado Financeiro"),
+    ("( ) Outros Resultados Operacionais",              "DRE Outros Resultados Operacionais"),
+    ("(=) Resultado Antes do Imposto de Renda",         "DRE Resultado Antes do Imposto de Renda"),
+    ("(-) Imposto de Renda e Contribuição Social",      "DRE Imposto de Renda e Contribuicao Social"),
+    ("(=) Resultado Líquido",                           "DRE Resultado Liquido"),
+    ("(=) Resultado Líquido após Equivalência",         "DRE Resultado Liquido apos Equivalencia"),
+    ("( ) EBITDA",                                      "DRE EBITDA"),
+)
 
 DFC_ROWS = (
     ("Recebimentos de Receita", "FLU Receita"),
@@ -98,11 +116,38 @@ BALANCO_ROWS = (
     ("TOTAL PATRIMÔNIO LÍQUIDO", "BAL Patrimonio Liquido", "total"),
 )
 
+def build_export_button(button_id):
+    return html.Button(
+        [
+            DashIconify(
+                icon="akar-icons:download",
+                width=20,
+                color="white"
+            ),
+            html.Span("Exportar Excel"),
+        ],
+        id=button_id,
+        n_clicks=0,
+        className="export-excel-btn",
+    )
 
 def _brl(value):
     if pd.isna(value):
-        value = 0.0
-    return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return "—"
+
+    value = float(value)
+
+    formatted = (
+        f"{abs(value):,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
+
+    if value < 0:
+        return f"R$ ({formatted})"
+
+    return f"R$ {formatted}"
 
 
 def _balanco_cell_value(balance_sheet, year, account):
@@ -246,10 +291,10 @@ STATEMENT_CONTAINER_STYLE = {
 }
 
 STATEMENT_HEADER_CARD_STYLE = {
-    "backgroundColor": "var(--sky)",
+    "backgroundColor": "var(--white)",
     "padding": "20px",
     "borderRadius": "var(--radius-lg)",
-    "border": "1px solid rgba(2, 132, 199, 0.2)",
+    "border": "1px solid #e2e8f0",
     "textAlign": "center",
     "boxShadow": "var(--shadow-sm)",
     "position": "relative",
@@ -311,7 +356,6 @@ FILTER_LABEL_STYLE = {
 
 STATEMENT_TABLE_CONFIG = {
     "columns": [
-        {"name": "", "id": "sinal"},
         {"name": "Descrição da Conta", "id": "conta"},
         {"name": "Valor Consolidado", "id": "valor"},
     ],
@@ -325,20 +369,8 @@ STATEMENT_TABLE_CONFIG = {
         "fontFamily": "sans-serif",
     },
     "style_cell_conditional": [
-        {
-            "if": {"column_id": "sinal"},
-            "width": "50px",
-            "textAlign": "center",
-            "fontWeight": "bold",
-            "fontSize": "16px",
-            "color": "#94a3b8",
-        },
         {"if": {"column_id": "conta"}, "textAlign": "left"},
-        {
-            "if": {"column_id": "valor"},
-            "textAlign": "right",
-            "width": "250px",
-        },
+        {"if": {"column_id": "valor"}, "textAlign": "right", "width": "250px"},
     ],
     "style_header": {
         "backgroundColor": "var(--fill-hover)",
@@ -349,21 +381,17 @@ STATEMENT_TABLE_CONFIG = {
     },
     "style_data_conditional": [
         {
-            "if": {
-                "filter_query": '{valor} contains "-"',
-                "column_id": "valor",
-            },
+            "if": {"filter_query": '{valor} contains "-"', "column_id": "valor"},
             "color": "var(--plum)",
             "fontWeight": "normal",
         },
         {
-            "if": {"filter_query": '{sinal} = "="'},
+            "if": {"filter_query": '{conta} begins with "(=)"'},
             "backgroundColor": "var(--fill)",
             "color": "var(--ink)",
         },
     ],
 }
-
 
 def build_statement_filter_field(
     label: str, control, width: str = "220px", margin_bottom: str = None
@@ -381,37 +409,57 @@ def build_statement_filter_field(
     )
 
 
-def build_statement_card(title: str, children: list, title_color: str = None):
-    """Cria um card padronizado para seções com título e conteúdo."""
+def build_statement_card(
+    title: str,
+    children: list,
+    title_color: str = None,
+    export_button_id: str = None,
+):
+    """Cria um card com título e botão opcional de exportação."""
+
     title_style = dict(SECTION_TITLE_STYLE)
+
     if title_color:
         title_style["color"] = title_color
+
+    # Título do card
+    header = html.Div(
+        [
+            html.H3(title, style={**title_style, "marginBottom": "0"}),
+
+            # Só cria o botão quando receber um ID
+            *(
+                [build_export_button(export_button_id)]
+                if export_button_id
+                else []
+            ),
+        ],
+        style={
+            "display": "flex",
+            "justifyContent": "space-between",
+            "alignItems": "center",
+            "gap": "16px",
+            "marginBottom": "18px",
+        },
+    )
+
     return html.Div(
         style=STATEMENT_CARD_STYLE,
         children=[
-            html.H3(title, style=title_style),
+            header,
             *children,
         ],
     )
 
-
 def build_dre_table(dre_data):
-    """Constrói a tabela DRE utilizando as mesmas classes CSS e visual da DFC (.dfc-table)."""
+    """Constrói a tabela DRE em 2 colunas (rótulo + valor), no mesmo estilo da DFC."""
     return html.Table(
         [
             html.Thead(
                 html.Tr(
                     [
-                        html.Th(
-                            "",
-                            scope="col",
-                            style={"width": "48px", "textAlign": "center"},
-                        ),
                         html.Th("Descrição da Conta", scope="col"),
-                        html.Th(
-                            "Valor Consolidado",
-                            scope="col",
-                        ),
+                        html.Th("Valor Consolidado", scope="col"),
                     ]
                 )
             ),
@@ -419,30 +467,25 @@ def build_dre_table(dre_data):
                 [
                     html.Tr(
                         [
+                            html.Th(dre_row.get("conta", ""), scope="row"),
                             html.Td(
-                                row.get("sinal", ""),
-                                style={
-                                    "textAlign": "center",
-                                    "fontWeight": "bold",
-                                    "color": "var(--ink-weak)",
-                                },
+                                dre_row.get("valor", ""),
+                                style={"textAlign": "right"},
                             ),
-                            html.Th(row.get("conta", ""), scope="row"),
-                            html.Td(row.get("valor", ""), style={"textAlign": "right"}),
                         ],
                         className=(
                             "dfc-total"
-                            if row.get("sinal") == "=" or row.get("conta") == "EBITDA"
+                            if dre_row.get("conta", "").startswith("(=)")
+                            or dre_row.get("conta") == "( ) EBITDA"
                             else ""
                         ),
                     )
-                    for row in dre_data
+                    for dre_row in dre_data
                 ]
             ),
         ],
         className="dfc-table",
     )
-
 
 def build_statement_table(table_id: str):
     """Cria o container para a tabela DRE estilizada como a DFC."""
@@ -469,7 +512,7 @@ def build_statement_page(
 ):
     """Constrói a árvore DOM de uma página de demonstrativo financeiro vertical (e.g. DRE).
 
-    Layout: header card → tabela vertical (sinal/conta/valor)
+    Layout: header card → tabela vertical (conta/valor)
     → gráfico top-10 cenários por ano (usando o seletor de ano da barra lateral).
     """
     header_card = html.Div(
@@ -483,6 +526,7 @@ def build_statement_page(
     table_card = build_statement_card(
         table_title,
         [build_statement_table(table_id)],
+        export_button_id="export-dre-btn",
     )
 
     filter_fields = []
@@ -529,6 +573,7 @@ def build_statement_page(
         className=page_id,
         style={"display": "none"},
         children=[
+            dcc.Download(id="download-dre"),
             html.Div(
                 style=STATEMENT_CONTAINER_STYLE,
                 children=[
@@ -570,6 +615,7 @@ def build_dfc_page(
                 className="dfc-table-wrap",
             ),
         ],
+        export_button_id="export-dfc-btn",
     )
 
     return html.Div(
@@ -577,6 +623,7 @@ def build_dfc_page(
         className=page_id,
         style={"display": "none"},
         children=[
+            dcc.Download(id="download-dfc"),
             html.Div(
                 style=STATEMENT_CONTAINER_STYLE,
                 children=[
@@ -615,13 +662,15 @@ def build_balanco_page(
                 className="dfc-table-wrap",
             ),
         ],
-    )
+        export_button_id="export-balanco-btn",
+)
 
     return html.Div(
         id=page_id,
         className=page_id,
         style={"display": "none"},
         children=[
+            dcc.Download(id="download-balanco"),
             html.Div(
                 style=STATEMENT_CONTAINER_STYLE,
                 children=[

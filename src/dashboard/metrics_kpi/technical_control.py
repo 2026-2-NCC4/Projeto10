@@ -14,11 +14,35 @@ def build_technical_controls_tiles(latest, prev):
             "Margem EBITDA",
             percent(latest.margem_ebitda.median()),
             delta("margem_ebitda"),
+            subtitle="Rentabilidade operacional",
+            icon="iconoven:market-analysis",
         ),
-        card("ROA", percent(latest.roa.median()), delta("roa")),
-        card("ROE", percent(latest.roe.median()), delta("roe")),
-        card("Liquidez corrente", ratio(latest.liquidez_corrente.median())),
-        card("Liquidez geral", ratio(latest.liquidez_geral.median())),
+        card(
+            "ROA",
+            percent(latest.roa.median()),
+            delta("roa"),
+            subtitle="Retorno sobre ativos",
+            icon="cil:graph",
+        ),
+        card(
+            "ROE",
+            percent(latest.roe.median()),
+            delta("roe"),
+            subtitle="Retorno sobre patrimônio",
+            icon="iconmind:dep-graph-outline-thin",
+        ),
+        card(
+            "Liquidez corrente",
+            ratio(latest.liquidez_corrente.median()),
+            subtitle="Cobertura de curto prazo",
+            icon="energy-icons:alternating-current-20",
+        ),
+        card(
+            "Liquidez geral",
+            ratio(latest.liquidez_geral.median()),
+            subtitle="Solvência de longo prazo",
+            icon="lucide:droplet",
+        ),
     ]
 
     return tiles2

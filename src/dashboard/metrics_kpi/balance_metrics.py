@@ -1,4 +1,3 @@
-# src/dashboard/metrics_kpis/balance_metrics.py
 import pandas as pd
 
 
