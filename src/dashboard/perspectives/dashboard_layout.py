@@ -677,7 +677,7 @@ def create_main_layout(
                         href="/balanco",
                         id="tab-balanco",
                         className="nav-tab nav-link",
-                        title="Balanço",
+                        title="Balanço Patrimonial",
                     ),
                 ],
             ),

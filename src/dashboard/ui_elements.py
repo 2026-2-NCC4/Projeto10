@@ -1,6 +1,8 @@
 from dash import html, dcc
+from dash_iconify import DashIconify
 import pandas as pd
 from config import FONT_STACK, COLORS
+
 
 
 # ==============================================================================
@@ -121,49 +123,123 @@ def ratio(value):
     """Format coverage multiples (e.g. 1.76 -> '1,76x') using pt-BR comma decimal."""
     return "—" if pd.isna(value) else f"{value:.2f}x".replace(".", ",")
 
+def variation_badge(value, suffix="", formatter=None):
+    if value is None or pd.isna(value):
+        text = "Sem comparação"
+        color_class = "badge-neutral"
+    else:
+        positive = value >= 0
+        arrow = "↑" if positive else "↓"
+        sign = "+" if positive else "-"
 
-def card(label, value, delta=None):
-    """Build a high-level KPI card with metric label, value, and optional variation.
+        if formatter == "money":
+            formatted = money(abs(value))
+            formatted = formatted.replace("R$ ", "")
+            text = f"{arrow} {sign}R$ {formatted}"
 
-    Parameters:
-        label (str): Name of the indicator (e.g. "Receita").
-        value (str): Formatted primary metric value (e.g. "R$ 450,20 mi").
-        delta (float, optional): Variation against previous period. Automatically
-                                 detects if delta is a rate (< 1, formatted in p.p.)
-                                 or currency (>= 1, formatted via money()).
-    """
-    children = [
-        html.Div(label, className="metric-label"),
-        html.Div(value, className="metric-value"),
-    ]
-    if delta is not None and not pd.isna(delta):
-        children.append(
-            html.Div(
-                (
-                    # Ratios and percentages are < 1, so magnitude determines whether
-                    # to show percentage points (p.p.) or currency (R$).
-                    f"Variação: {f'{delta * 100:+.1f}'.replace('.', ',')} p.p."
-                    if abs(delta) < 1
-                    else f"Variação: {money(delta)}"
-                ),
-                className="metric-delta",
-            )
+        else:
+            formatted = f"{abs(value):.1f}".replace(".", ",")
+            text = f"{arrow} {sign}{formatted} {suffix}".strip()
+
+        color_class = (
+            "badge-positive"
+            if positive
+            else "badge-negative"
         )
-    return html.Div(children, className="metric-card")
 
-
-def insight(title, text, tone="neutral"):
-    """Build an analytical narrative insight card with semantic tone styling.
-
-    Parameters:
-        title (str): Bold summary heading of the observation.
-        text (str): Explanatory analysis explaining business implications.
-        tone (str): Styling class modifier ('neutral', 'alert', or 'positive').
-    """
     return html.Div(
-        [html.H3(title), html.P(text)], className=f"insight-card insight-{tone}"
+        text,
+        className=f"investor-badge {color_class}",
     )
 
+def card(
+    label,
+    value,
+    delta=None,
+    subtitle=None,
+    icon=None,
+    accent_color=None,
+):
+    """
+    Build a reusable KPI card with label, subtitle, icon, value,
+    and optional variation.
+
+    Parameters:
+        label (str): Name of the indicator.
+        value (str): Formatted primary metric value.
+        delta (float, optional): Variation against the previous period.
+        subtitle (str, optional): Supporting description below the label.
+        icon (str, optional): Iconify icon name.
+        accent_color (str, optional): Custom icon color.
+    """
+
+    icon_color = accent_color or COLORS.get("plum", "#501839")
+
+    header_children = []
+
+    if icon:
+        header_children.append(
+            html.Div(
+                DashIconify(
+                    icon=icon,
+                    width=22,
+                    height=22,
+                    color=icon_color,
+                ),
+                className="metric-icon",
+            )
+        )
+
+    text_children = [
+        html.Div(label, className="metric-label"),
+    ]
+
+    if subtitle:
+        text_children.append(
+            html.Div(
+                subtitle,
+                className="metric-subtitle",
+            )
+        )
+
+    header_children.append(
+        html.Div(
+            text_children,
+            className="metric-heading",
+        )
+    )
+
+    children = [
+        html.Div(
+            header_children,
+            className="metric-header",
+        ),
+        html.Div(
+            value,
+            className="metric-value",
+        ),
+    ]
+
+    if delta is not None and not pd.isna(delta):
+        if abs(delta) < 1:
+            children.append(
+                variation_badge(
+                    delta * 100,
+                    suffix="p.p.",
+                )
+            )
+        else:
+            children.append(
+                variation_badge(
+                    delta,
+                    formatter="money",
+                )
+            )
+    return html.Div(
+        children,
+        className="metric-card",
+        style={"--metric-accent": icon_color},
+    )
 
 def section(title, subtitle, children, footer_desc=None):
     """Build a semantic content section with header and responsive content container."""
@@ -200,6 +276,16 @@ def chart(figure, class_name="chart-card"):
     return html.Div(
         dcc.Graph(figure=figure, config={"displayModeBar": False}, responsive=True),
         className=class_name,
+    )
+
+def insight(title, text, tone="neutral"):
+    """Build an analytical insight card with semantic tone styling."""
+    return html.Div(
+        [
+            html.H3(title),
+            html.P(text),
+        ],
+        className=f"insight-card insight-{tone}",
     )
 
 

@@ -1,163 +1,327 @@
 /* =========================================================
    LAYOUT PRINCIPAL DO INVESTIDOR
    ========================================================= */
+
 .investor-main-layout {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
 }
 
-/* Linha de cima: Lado a lado (2 colunas) */
+/* Linha superior: dois painéis lado a lado */
 .investor-top-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
-  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   width: 100%;
+
+  /* Faz os dois cards terem a mesma altura */
   align-items: stretch;
 }
 
-/* Linha de baixo: Um abaixo do outro (1 coluna) */
-.investor-bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr; /* Uma coluna, ocupando 100% */
-  gap: 24px;
+.investor-top-grid > .performance-panel-container,
+.investor-top-grid > .investor-panel {
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
-/* Responsividade: Se a tela for pequena (celular/tablet), joga o topo para 1 coluna */
-@media (max-width: 1024px) {
-  .investor-top-grid {
-    grid-template-columns: 1fr;
-  }
+/* Linha inferior: painéis em uma coluna */
+.investor-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
 }
 
 /* =========================================================
    PAINÉIS GERAIS
    ========================================================= */
+
 .investor-panel,
 .performance-panel-container {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+
+  padding: 18px 20px;
+
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 22px;
-  width: 100%;
+
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cashflow-panel {
-  border: 1px solid #e4eaf0;
   padding: 18px;
+  border: 1px solid #e4eaf0;
 }
 
 .investor-panel-title {
+  margin: 0;
+
+  color: #111827;
   font-size: 18px;
   font-weight: 700;
-  color: #111827;
-  margin-top: 0;
-  margin-bottom: 16px;
 }
 
 /* =========================================================
-   PAINEL DE INDICADORES (GAUGE + LISTA LADO A LADO)
+   CABEÇALHOS DOS PAINÉIS
    ========================================================= */
+
 .panel-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+
+  min-width: 0;
+  margin-bottom: 8px;
 }
 
 .panel-header-icon {
-  font-size: 25px;
-  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #501839;
+  font-size: 22px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .panel-header-title {
+  margin: 0;
+
+  color: #111827;
   font-size: 18px;
   font-weight: 700;
-  color: #111827;
-  margin: 0;
+  line-height: 1.2;
 }
 
-/* Aqui voltamos para o formato lado a lado (gauge na esquerda, ROE/ROIC na direita) */
+/* =========================================================
+   INDICADORES DE DESEMPENHO
+   ========================================================= */
+
+.performance-panel-container {
+  padding: 18px 20px;
+}
+
+/* Velocímetro, divisor e indicadores */
 .performance-body {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 15px;
-}
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 0.82fr)
+    1px
+    minmax(240px, 1.18fr);
 
-.performance-gauge-wrapper {
-  flex: 0.9;
-  min-width: 200px;
-  display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 18px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 12px 0 4px;
 }
 
 .performance-divider {
   width: 1px;
-  background-color: #e5e7eb;
-  margin: 8px 10px;
-  align-self: stretch;
+  height: 220px;
+  min-height: 0;
+
+  background: #e2e8f0;
 }
 
 .performance-indicators {
-  flex: 1.4;
-  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  min-width: 0;
 }
 
-/* Gauge */
+/* =========================================================
+   VELOCÍMETRO
+   ========================================================= */
+
+.performance-gauge-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 4px 6px 0;
+}
+
 .gauge-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+
+  width: 100%;
+  max-width: 220px;
 }
 
-.gauge-arc {
+/* Área total do semicírculo */
+.gauge-meter {
   position: relative;
-  width: 180px;
-  height: 90px;
-  overflow: hidden;
-  margin: 8px auto 0;
-  border-radius: 180px 180px 0 0;
+
+  width: 190px;
+  height: 98px;
+
+  max-width: 100%;
+  margin: 0 auto 8px;
 }
 
+/* Semicírculo externo */
+.gauge-arc {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+
+  width: 190px;
+  height: 95px;
+  max-width: 100%;
+
+  transform: translateX(-50%);
+
+  border-radius: 190px 190px 0 0;
+  overflow: hidden;
+}
+
+/* Recorte central branco */
 .gauge-inner-cover {
   position: absolute;
-  width: 130px;
-  height: 65px;
-  left: 25px;
+  left: 50%;
   bottom: 0;
-  background-color: #ffffff;
-  border-radius: 130px 130px 0 0;
+
+  width: 140px;
+  height: 70px;
+
+  transform: translateX(-50%);
+
+  background: #ffffff;
+  border-radius: 140px 140px 0 0;
 }
 
-.gauge-value {
-  font-size: 28px;
-  font-weight: 750;
-  color: #111827;
-  margin-top: 8px;
+/* Agulha */
+.gauge-needle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+
+  width: 72px;
+  height: 3px;
+
+  background: #501839;
+  border-radius: 999px;
+
+  transform-origin: left center;
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  z-index: 4;
 }
 
-.gauge-label {
-  font-size: 13px;
+/* Ponta da agulha */
+.gauge-needle::after {
+  content: "";
+
+  position: absolute;
+  top: 50%;
+  right: -6px;
+
+  width: 0;
+  height: 0;
+
+  transform: translateY(-50%);
+
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 9px solid #501839;
+}
+
+/* Centro da agulha */
+.gauge-needle-center {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+
+  width: 16px;
+  height: 16px;
+
+  transform: translateX(-50%);
+
+  background: #501839;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+
+  box-shadow: 0 2px 7px rgba(80, 24, 57, 0.22);
+
+  z-index: 5;
+}
+
+/* Valores 0% e 100% */
+.gauge-scale {
+  position: absolute;
+  bottom: -21px;
+
+  color: #6b706b;
+  font-size: 10px;
   font-weight: 500;
-  color: #374151;
-  margin-bottom: 12px;
+  line-height: 1;
 }
 
-/* Itens de Performance */
+.gauge-scale-min {
+  left: 0;
+}
+
+.gauge-scale-max {
+  right: 0;
+}
+
+/* Valor da margem */
+.gauge-value {
+  margin-top: 9px;
+
+  color: #111827;
+  font-size: 2.05rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+/* Nome da margem */
+.gauge-label {
+  margin-top: 7px;
+  margin-bottom: 10px;
+
+  color: #374151;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* =========================================================
+   INDICADORES ROE, ROIC E EBITDA
+   ========================================================= */
+
 .performance-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: 10px;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 62px;
+
+  padding: 10px 0;
+
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -166,15 +330,21 @@
 }
 
 .performance-icon {
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
-  border-radius: 10px;
-  background-color: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  flex-shrink: 0;
+
+  color: #501839;
+  background-color: #f1f5f9;
+
+  border-radius: 9px;
+
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -184,25 +354,41 @@
 }
 
 .performance-label {
-  font-size: 12px;
+  margin-bottom: 2px;
+
   color: #64748b;
+  font-size: 11px;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .performance-value {
-  font-size: 17px;
-  font-weight: 700;
   color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+
+  overflow-wrap: anywhere;
 }
 
-/* Badges de Variação */
+/* =========================================================
+   BADGES DE VARIAÇÃO
+   ========================================================= */
+
 .investor-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  padding: 4px 9px;
+
   border-radius: 20px;
-  font-size: 11px;
+
+  font-size: 10px;
   font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -210,225 +396,398 @@
   color: #64748b;
   background-color: #f1f5f9;
 }
+
 .badge-positive {
   color: #15803d;
   background-color: #dcfce7;
 }
+
 .badge-negative {
   color: #dc2626;
   background-color: #fee2e2;
 }
 
 /* =========================================================
-   COMPOSIÇÃO DO ATIVO (DONUT LADO A LADO COM LEGENDA)
+   COMPOSIÇÃO DO ATIVO
    ========================================================= */
+
 .asset-composition-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Gráfico e legenda lado a lado dentro do card */
+  grid-template-columns: minmax(180px, 0.9fr) minmax(190px, 1.1fr);
   align-items: center;
   gap: 10px;
+
+  width: 100%;
+  min-width: 0;
 }
 
 .legend-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 10px;
+
+  min-width: 0;
+  padding: 8px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 14px;
-  font-size: 13px;
+  gap: 8px;
+
+  min-width: 0;
+  margin-bottom: 12px;
+
+  font-size: 12px;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
   display: inline-block;
+
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
 .legend-label {
+  min-width: 0;
+
   color: #374151;
+  line-height: 1.3;
 }
+
 .legend-value {
-  font-weight: 600;
   margin-left: auto;
+  padding-left: 8px;
+
   color: #111827;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* =========================================================
-   CABEÇALHOS E LEGENDAS DOS GRÁFICOS GRANDES
+   CABEÇALHOS DOS GRÁFICOS GRANDES
    ========================================================= */
+
 .panel-header-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+
   margin-bottom: 5px;
 }
 
 .panel-expand-icon {
-  font-size: 22px;
   color: #64748b;
+  font-size: 20px;
   cursor: default;
 }
 
 .cashflow-header-wrapper {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+
+  margin-bottom: 10px;
 }
 
 .legend-inline-container {
   display: flex;
-  gap: 14px;
   align-items: center;
   flex-wrap: wrap;
+  gap: 12px;
 }
 
 .legend-item-inline {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: #555;
+
+  color: #555555;
+  font-size: 11px;
 }
 
 .legend-square {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
   display: inline-block;
+
+  width: 9px;
+  height: 9px;
+
+  border-radius: 3px;
 }
 
-/* Responsividade para celular */
-@media (max-width: 600px) {
-  .asset-composition-grid {
-    grid-template-columns: 1fr;
-  }
-  .performance-body {
-    flex-direction: column;
-  }
-  .performance-divider {
-    display: none;
-  }
-}
+/* =========================================================
+   CARDS COLORIDOS
+   ========================================================= */
 
-/* --- CARDS COLORIDOS --- */
 .kpi-card-hover {
-  border-radius: 12px;
-  padding: 16px 20px;
-  border: 1px solid transparent;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  cursor: default;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  padding: 14px 18px;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  cursor: default;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .kpi-card-hover:hover {
-  transform: translateY(-4px) scale(1.02);
+  transform: translateY(-3px);
+
+  border-color: rgba(0, 0, 0, 0.05);
+
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .kpi-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 9px;
+
+  margin-bottom: 12px;
 }
 
 .kpi-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 8px;
 }
 
 .kpi-title {
-  font-size: 13px;
-  font-weight: 600;
   color: #374151;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .kpi-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 12px;
+
+  margin-bottom: 10px;
 }
 
 .kpi-value {
-  font-size: 26px;
-  font-weight: 800;
   color: #111827;
+  font-size: 23px;
+  font-weight: 800;
   letter-spacing: -0.5px;
 }
 
 .kpi-sparkline {
-  width: 70px;
-  height: 24px;
+  width: 64px;
+  height: 22px;
   opacity: 0.9;
 }
 
 .kpi-footer {
-  font-size: 11px;
   display: flex;
   align-items: center;
   gap: 4px;
+
+  font-size: 10px;
 }
 
 .kpi-variation-text {
   color: #6b7280;
 }
-/* Container Principal da Página */
-.statement-container {
-  background-color: #f8fafc;
-  min-height: 100vh;
-  padding: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+
+/* =========================================================
+   ESTRUTURA DA PÁGINA
+   ========================================================= */
+
+.section-investor {
+  margin-top: 36px;
+  padding-top: 36px;
+
+  border-top: 1px solid var(--line);
 }
 
-/* Card do Cabeçalho */
-.statement-header-card {
-  background-color: #ffffff;
+.statement-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  min-height: 100vh;
   padding: 24px;
-  border-radius: 8px;
+
+  background-color: #f8fafc;
+}
+
+/* Card do cabeçalho */
+.statement-header-card {
+  padding: 22px;
+
+  background-color: #ffffff;
   border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
   text-align: center;
 }
 
-/* Título */
 .statement-title {
+  margin: 0 0 9px;
+
   color: #111111;
-  margin: 0 0 10px 0;
   font-family: sans-serif;
   font-size: 22px;
 }
 
-/* Subtítulo */
 .statement-subtitle {
-  color: #4e4e4e;
-  margin: 0 auto;
-  font-size: 14px;
-  font-family: sans-serif;
-  text-wrap: balance;
   max-width: 720px;
+  margin: 0 auto;
+
+  color: #4e4e4e;
+  font-family: sans-serif;
+  font-size: 14px;
+
+  text-wrap: balance;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 1250px) {
+  .performance-body {
+    grid-template-columns:
+      minmax(170px, 0.8fr)
+      1px
+      minmax(220px, 1.2fr);
+
+    gap: 14px;
+  }
+
+  .gauge-meter,
+  .gauge-arc {
+    width: 175px;
+  }
+
+  .gauge-meter {
+    height: 90px;
+  }
+
+  .gauge-arc {
+    height: 87px;
+  }
+
+  .gauge-inner-cover {
+    width: 130px;
+    height: 65px;
+  }
+
+  .gauge-needle {
+    width: 66px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .investor-top-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .performance-body {
+    grid-template-columns:
+      minmax(190px, 0.85fr)
+      1px
+      minmax(260px, 1.15fr);
+  }
+
+  .asset-composition-grid {
+    grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .statement-container {
+    padding: 16px;
+  }
+
+  .performance-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+
+    padding-top: 10px;
+  }
+
+  .performance-divider {
+    width: 100%;
+    height: 1px;
+    min-height: 1px;
+  }
+
+  .performance-gauge-wrapper {
+    padding: 6px 0 12px;
+  }
+
+  .asset-composition-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .legend-container {
+    padding: 0 10px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .investor-panel,
+  .performance-panel-container {
+    padding: 16px;
+  }
+
+  .panel-header-title,
+  .investor-panel-title {
+    font-size: 16px;
+  }
+
+  .performance-item {
+    gap: 8px;
+  }
+
+  .performance-value {
+    font-size: 15px;
+  }
+
+  .investor-badge {
+    padding: 4px 7px;
+    font-size: 9px;
+  }
+}
+/* Botões do gráfico Evolução do Resultado */
+#investor-evolution-chart .updatemenu-button rect {
+  rx: 8px;
+  ry: 8px;
+  fill: #e0f2fe !important;
+  stroke: #0284c7 !important;
+  stroke-width: 1px !important;
+}
+
+#investor-evolution-chart .updatemenu-button text {
+  fill: #075985 !important;
+  font-weight: 600 !important;
 }

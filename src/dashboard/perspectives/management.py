@@ -35,58 +35,85 @@ def render_management_view(
         latest, selected_metric, metric_labels, latest_year, perspective="gestao"
     )
 
-    return page(
-        index_fig,
-        subtitle,
-        [
-            section(
-                "Resumo operacional",
-                "Visão consolidada do desempenho econômico-financeiro no exercício selecionado. "
-                "Apresenta faturamento bruto, margem operacional, lucro líquido, geração de caixa e perfil da dívida "
-                "para avaliar a sustentabilidade do negócio e orientar decisões executivas de curto e médio prazo.",
-                [html.Div(tiles1, className="metrics-grid")],
-            ),
-            section(
-                "Leituras para gestão",
-                "Diagnóstico executivo automatizado que cruza tração de receitas, eficiência operacional e risco de liquidez. "
-                "Identifica desvios frente ao ciclo anterior e aponta sinais de alerta fundamentais para respaldar intervenções táticas da diretoria.",
-                [html.Div(management_insights, className="insights-grid")],
-            ),
-            section(
-                "Acompanhamento da operação",
-                "Monitoramento evolutivo e probabilístico da concessão ao longo dos anos. "
-                "Compara a trajetória de expansão e margens operacionais (Receita e EBITDA), o confronto entre liquidez e criação de valor econômico (EVA), "
-                "e o mapeamento estocástico de riscos críticos de solvência e resultado.",
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [chart(trend), desc_trend], className="chart-wrapper"
-                            ),
-                            html.Div(
-                                [chart(value_fig), desc_value],
-                                className="chart-wrapper",
-                            ),
-                            html.Div(
-                                [chart(risk_fig), desc_risk], className="chart-wrapper"
-                            ),
-                        ],
-                        className="chart-grid",
-                    )
-                ],
-            ),
-            *terminal_children,
-            section(
-                "Distribuição de cenários",
-                "Análise estocástica de sensibilidade e dispersão baseada nas iterações de Monte Carlo. "
-                "Mapeia a densidade de probabilidades, a amplitude do intervalo interquartil (Q1–Q3) e os cenários de cauda (P10 e P90) "
-                "do indicador selecionado, permitindo quantificar o grau de incerteza operacional.",
-                [
-                    html.Div(
-                        [chart(distribution), desc_dist],
-                        className="chart-wrapper",
-                    )
-                ],
-            ),
-        ],
-    )
+    return html.Div(
+    [
+        # CABEÇALHO
+        html.Div(
+            className="statement-header-card",
+            children=[
+                html.H1(
+                    "Visão do Gestor",
+                    className="statement-title"
+                ),
+                html.P(
+                    "Desempenho operacional, eficiência financeira e suporte à tomada de decisões estratégicas.",
+                    className="statement-subtitle"
+                ),
+            ],
+            style={"marginBottom": "24px"}
+        ),
+
+        # CONTEÚDO ORIGINAL DA PÁGINA
+        page(
+            index_fig,
+            subtitle,
+            [
+                section(
+                    "Resumo operacional",
+                    "Visão consolidada do desempenho econômico-financeiro no exercício selecionado. "
+                    "Apresenta faturamento bruto, margem operacional, lucro líquido, geração de caixa e perfil da dívida "
+                    "para avaliar a sustentabilidade do negócio e orientar decisões executivas de curto e médio prazo.",
+                    [html.Div(tiles1, className="metrics-grid")],
+                ),
+
+                section(
+                    "Leituras para gestão",
+                    "Diagnóstico executivo automatizado que cruza tração de receitas, eficiência operacional e risco de liquidez. "
+                    "Identifica desvios frente ao ciclo anterior e aponta sinais de alerta fundamentais para respaldar intervenções táticas da diretoria.",
+                    [html.Div(management_insights, className="insights-grid")],
+                ),
+
+                section(
+                    "Acompanhamento da operação",
+                    "Monitoramento evolutivo e probabilístico da concessão ao longo dos anos. "
+                    "Compara a trajetória de expansão e margens operacionais, o confronto entre liquidez e criação de valor econômico "
+                    "e o mapeamento estocástico de riscos críticos.",
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [chart(trend), desc_trend],
+                                    className="chart-wrapper"
+                                ),
+                                html.Div(
+                                    [chart(value_fig), desc_value],
+                                    className="chart-wrapper"
+                                ),
+                                html.Div(
+                                    [chart(risk_fig), desc_risk],
+                                    className="chart-wrapper"
+                                ),
+                            ],
+                            className="chart-grid",
+                        )
+                    ],
+                ),
+
+                *terminal_children,
+
+                section(
+                    "Distribuição de cenários",
+                    "Análise estocástica de sensibilidade e dispersão baseada nas iterações de Monte Carlo.",
+                    [
+                        html.Div(
+                            [chart(distribution), desc_dist],
+                            className="chart-wrapper",
+                        )
+                    ],
+                ),
+            ],
+        ),
+    ],
+    className="statement-container",
+    style={"paddingBottom": "40px"}
+)

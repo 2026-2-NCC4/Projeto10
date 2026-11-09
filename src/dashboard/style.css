@@ -11,6 +11,7 @@
   --fill: #f4f4f5;
   --fill-hover: #e4e4e7;
   --plum: #501839;
+  --plum-medium: #a57592;
   --plum-weak: #f1d6e6;
   --sky: #63aee7;
   --blue: #0284c7;
@@ -950,9 +951,10 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
 */
 
 .metrics-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+  align-items: stretch;
 }
 
 .metric-card {
@@ -967,14 +969,52 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
   transition: all var(--duration-snap) var(--ease-out);
 }
 
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(80, 24, 57, 0.11);
+}
+
+.metric-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+
+    background: #f1d6e6;
+    border-radius: 10px;
+}
+
+.metric-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
 .metric-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--plum);
+    color: #25151f;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.metric-subtitle {
+    color: #756a70;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.35;
 }
 
 .metric-value {
-  margin-top: 12px;
+  margin-top: 22px;
   font-size: 2rem;
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -985,10 +1025,29 @@ body:has(.simplified-view-toggle input[type="checkbox"]:checked) .section h2,
 }
 
 .metric-delta {
-  margin-top: 8px;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 14px;
+  width: fit-content;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.metric-delta-positive {
+    color: #287a55;
+}
+
+.metric-delta-negative {
+    color: #b33a4a;
+}
+
+.metric-label {
+  font-size: 0.85rem;
   font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  color: var(--plum);
 }
 
 /*

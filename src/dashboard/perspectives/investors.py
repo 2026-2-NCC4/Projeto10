@@ -1,9 +1,14 @@
 from dash import html, dcc
 import pandas as pd
-from ui_elements import money, percent
+from ui_elements import money, percent, card, chart
 import plotly.graph_objects as go
-from dash_svg import Svg, Path
 from dash_iconify import DashIconify
+from metrics_kpi.chart_descriptions import (
+    get_trend_description,
+    get_value_cash_description,
+    get_risk_description,
+    get_distribution_description,
+)
 
 
 def _metric_value(data, key, formatter):
@@ -143,44 +148,105 @@ def _performance_panel(latest, prev):
     roic_delta = _calculate_variation(roic, roic_prev, percentage_points=True)
     ebitda_delta = _calculate_variation(ebitda, ebitda_prev)
 
-    gauge_max = 20
-    gauge_value = margem if margem is not None and not pd.isna(margem) else 0
-    gauge_fill = max(0, min(100, (gauge_value / gauge_max) * 100))
-    gauge_angle = gauge_fill * 1.8
+        # Escala visual do medidor
+    gauge_min = 0
+    gauge_max = 100
+
+    gauge_value = (
+        margem
+        if margem is not None and not pd.isna(margem)
+        else 0
+)
+
+    # Limita o valor entre 0% e 100%
+    gauge_percent = max(
+        0,
+        min(
+            100,
+            ((gauge_value - gauge_min) / (gauge_max - gauge_min)) * 100,
+        ),
+    )
+
+    # Semicírculo: -90 graus até +90 graus
+    needle_angle = -180 + (gauge_percent * 1.8)
+
+    # Preenchimento do arco
+    gauge_angle = gauge_percent * 1.8
 
     gauge = html.Div(
         [
+            # Medidor
             html.Div(
-                className="gauge-arc",
-                style={
-                    "background": (
-                        f"conic-gradient(from 270deg at 50% 100%, "
-                        f"#10B981 0deg {gauge_angle}deg, "
-                        f"#E5E7EB {gauge_angle}deg 180deg, "
-                        f"transparent 180deg 360deg)"
-                    )
-                },
-                children=[html.Div(className="gauge-inner-cover")]
+                [
+                    # Arco colorido
+                    html.Div(
+                        className="gauge-arc",
+                        style={
+                                "background": (
+                                    f"conic-gradient("
+                                    f"from 270deg at 50% 100%, "
+                                    f"#a57592 0deg {gauge_angle}deg, "
+                                    f"#e5e7eb {gauge_angle}deg 180deg, "
+                                    f"transparent 180deg 360deg"
+                                    f")"
+                                )
+                        },
+                        children=[
+                            html.Div(className="gauge-inner-cover"),
+                        ],
+                    ),
+
+                    # Agulha
+                    html.Div(
+                        className="gauge-needle",
+                        style={
+                            "transform": f"rotate({needle_angle}deg)",
+                        },
+                    ),
+
+                    # Centro da agulha
+                    html.Div(
+                        className="gauge-needle-center",
+                    ),
+
+                    # Limites da escala
+                    html.Span("0%", className="gauge-scale gauge-scale-min"),
+                    html.Span("100%", className="gauge-scale gauge-scale-max"),
+                ],
+                className="gauge-meter",
             ),
-            html.Div(_format_percent(margem), className="gauge-value"),
-            html.Div("Margem Líquida", className="gauge-label"),
-            _variation_badge(margem_delta, "p.p."),
+
+            # Valor
+            html.Div(
+                _format_percent(margem),
+                className="gauge-value",
+            ),
+
+            html.Div(
+                "Margem Líquida",
+                className="gauge-label",
+            ),
+
+            _variation_badge(
+                margem_delta,
+                "p.p.",
+            ),
         ],
         className="gauge-container",
     )
 
     indicators = [
         _performance_item(
-            DashIconify(icon="lucide:trending-up", width=24, color="#0284c7"), 
-            "ROE", _format_percent(roe), roe_delta, "p.p.", "#0284c7"
+            DashIconify(icon="lucide:trending-up", width=24, color="#501839"), 
+            "ROE", _format_percent(roe), roe_delta, "p.p.", "#501839"
         ),
         _performance_item(
-            DashIconify(icon="lucide:coins", width=24, color="#0284c7"), 
-            "ROIC", _format_percent(roic), roic_delta, "p.p.", "#0284c7"
+            DashIconify(icon="lucide:coins", width=24, color="#501839"), 
+            "ROIC", _format_percent(roic), roic_delta, "p.p.", "#501839"
         ),
         _performance_item(
-            DashIconify(icon="lucide:badge-dollar-sign", width=24, color="#0284c7"), 
-            "EBITDA", _format_money_millions(ebitda), ebitda_delta, "%", "#0284c7"
+            DashIconify(icon="lucide:badge-dollar-sign", width=24, color="#501839"), 
+            "EBITDA", _format_money_millions(ebitda), ebitda_delta, "%", "#501839"
         ),
     ]
 
@@ -192,7 +258,7 @@ def _performance_panel(latest, prev):
                         DashIconify(
                             icon="material-symbols:target",  # ou o nome exato do ícone alvo que deseja
                             width=20, 
-                            color="#0284c7"
+                            color="#501839"
                         ), 
                         className="panel-header-icon"
                     ),
@@ -305,71 +371,305 @@ def _asset_composition_panel(data):
         ],
         className="investor-panel",
     )
-
 def _evolution_result_panel(data):
-    colunas = ["Ano", "investor_receita_liquida", "investor_lucro_liquido", "investor_margem_liquida"]
-    faltantes = [c for c in colunas if c not in data.columns]
+    colunas = [
+        "Ano",
+        "investor_receita_liquida",
+        "investor_lucro_liquido",
+        "investor_margem_liquida",
+    ]
 
-    if data is None or data.empty or faltantes:
-        return html.Div("Dados insuficientes...", className="investor-panel")
+    if data is None or data.empty:
+        return html.Div(
+            "Dados insuficientes...",
+            className="investor-panel",
+        )
+
+    faltantes = [
+        coluna
+        for coluna in colunas
+        if coluna not in data.columns
+    ]
+
+    if faltantes:
+        return html.Div(
+            f"Colunas não encontradas: {', '.join(faltantes)}",
+            className="investor-panel",
+        )
 
     df = data[colunas].copy()
-    df["ano_num"] = pd.to_numeric(df["Ano"].astype(str).str.extract(r"(\d+)")[0], errors="coerce")
-    metricas = ["investor_receita_liquida", "investor_lucro_liquido", "investor_margem_liquida"]
+
+    df["ano_num"] = pd.to_numeric(
+        df["Ano"]
+        .astype(str)
+        .str.extract(r"(\d+)")[0],
+        errors="coerce",
+    )
+
+    metricas = [
+        "investor_receita_liquida",
+        "investor_lucro_liquido",
+        "investor_margem_liquida",
+    ]
 
     for coluna in metricas:
-        df[coluna] = pd.to_numeric(df[coluna], errors="coerce")
+        df[coluna] = pd.to_numeric(
+            df[coluna],
+            errors="coerce",
+        )
 
-    df = df.dropna(subset=["ano_num"]).groupby("ano_num", as_index=False)[metricas].median().sort_values("ano_num")
-    anos = [f"Ano {int(a)}" for a in df["ano_num"]]
+    df = (
+        df.dropna(subset=["ano_num"])
+        .groupby("ano_num", as_index=False)[metricas]
+        .median()
+        .sort_values("ano_num")
+    )
+
+    if df.empty:
+        return html.Div(
+            "Não existem dados válidos para montar o gráfico.",
+            className="investor-panel",
+        )
+
+    anos = [
+        f"Ano {int(ano)}"
+        for ano in df["ano_num"]
+    ]
 
     receita = df["investor_receita_liquida"] / 1_000_000
     lucro = df["investor_lucro_liquido"] / 1_000_000
     margem = df["investor_margem_liquida"]
 
-    fig = go.Figure()
+    # Cores do gráfico
+    preto = "#111111"
+    azul_escuro = "#075985"
+    azul_principal = "#0284c7"
+    azul_claro = "#38bdf8"
+    azul_muito_claro = "#e0f2fe"
+    cinza_grid = "#e5e7eb"
+
+    # Configurações das métricas exibidas
     configuracoes = [
-        {"nome": "Receita", "valores": receita, "formato": "R$ %{y:,.1f} mi", "eixo": "R$ milhões"},
-        {"nome": "Lucro Líquido", "valores": lucro, "formato": "R$ %{y:,.1f} mi", "eixo": "R$ milhões"},
-        {"nome": "Margem", "valores": margem, "formato": "%{y:.1f}%", "eixo": "Percentual (%)"},
+        {
+            "nome": "Receita",
+            "valores": receita,
+            "formato": "R$ %{y:,.1f} mi",
+            "eixo": "R$ milhões",
+        },
+        {
+            "nome": "Lucro Líquido",
+            "valores": lucro,
+            "formato": "R$ %{y:,.1f} mi",
+            "eixo": "R$ milhões",
+        },
+        {
+            "nome": "Margem",
+            "valores": margem,
+            "formato": "%{y:.1f}%",
+            "eixo": "Percentual (%)",
+        },
     ]
 
-    for indice, config in enumerate(configuracoes):
-        fig.add_trace(go.Bar(
-            x=anos, y=config["valores"], name=config["nome"], marker_color="#2563A6",
-            opacity=0.85, visible=(indice == 0),
-            hovertemplate=("<b>%{x}</b><br>" + config["formato"] + "<extra></extra>"),
-        ))
-        fig.add_trace(go.Scatter(
-            x=anos, y=config["valores"], name="Evolução", mode="lines+markers",
-            line=dict(color="#173F7A", width=3), marker=dict(size=7, color="#173F7A"),
-            visible=(indice == 0),
-            hovertemplate=("<b>%{x}</b><br>" + config["formato"] + "<extra></extra>"),
-        ))
+    # Criação da figura
+    fig = go.Figure()
 
-    botoes = []
     for indice, config in enumerate(configuracoes):
-        visibilidade = [False] * 6
+        # Barras em azul-escuro
+        fig.add_trace(
+            go.Bar(
+                x=anos,
+                y=config["valores"],
+                name=config["nome"],
+                marker=dict(
+                    color=azul_escuro,
+                    line=dict(
+                        color=azul_escuro,
+                        width=0,
+                    ),
+                ),
+                opacity=0.95,
+                visible=(indice == 0),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    + config["formato"]
+                    + "<extra></extra>"
+                ),
+            )
+        )
+
+        # Linha e pontos em azul-claro
+        fig.add_trace(
+            go.Scatter(
+                x=anos,
+                y=config["valores"],
+                name="Evolução",
+                mode="lines+markers",
+                line=dict(
+                    color=azul_claro,
+                    width=3,
+                ),
+                marker=dict(
+                    size=9,
+                    color=azul_claro,
+                    line=dict(
+                        color=azul_claro,
+                        width=2,
+                    ),
+                ),
+                visible=(indice == 0),
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    + config["formato"]
+                    + "<extra></extra>"
+                ),
+            )
+        )
+
+    # Botões para alternar as métricas
+    botoes = []
+
+    for indice, config in enumerate(configuracoes):
+        visibilidade = [False] * len(fig.data)
+
         visibilidade[indice * 2] = True
         visibilidade[indice * 2 + 1] = True
-        botoes.append(dict(
-            label=config["nome"], method="update",
-            args=[{"visible": visibilidade}, {"yaxis": {"title": config["eixo"], "rangemode": "tozero"}}],
-        ))
+
+        botoes.append(
+            dict(
+                label=config["nome"],
+                method="update",
+                args=[
+                    {
+                        "visible": visibilidade,
+                    },
+                    {
+                        "yaxis": {
+                            "title": {
+                                "text": config["eixo"],
+                                "font": {
+                                    "color": preto,
+                                    "size": 12,
+                                },
+                            },
+                            "rangemode": "tozero",
+                            "showgrid": True,
+                            "gridcolor": cinza_grid,
+                            "gridwidth": 1,
+                            "showline": False,
+                            "zeroline": False,
+                            "tickfont": {
+                                "color": preto,
+                                "size": 11,
+                            },
+                        }
+                    },
+                ],
+            )
+        )
 
     fig.update_layout(
-        height=370, autosize=True, showlegend=False, paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
-        font=dict(family="Inter, Segoe UI, Arial, sans-serif", color="#172033", size=12),
-        margin=dict(l=55, r=25, t=65, b=45),
-        xaxis=dict(title=None, showgrid=False, linecolor="#E5E7EB", tickfont=dict(color="#64748B")),
-        yaxis=dict(title="R$ milhões", rangemode="tozero", showgrid=True, gridcolor="#E8EEF6", zeroline=False, tickfont=dict(color="#64748B")),
-        updatemenus=[dict(
-            type="buttons", direction="right", buttons=botoes, active=0,
-            x=1, y=1.19, xanchor="right", yanchor="top",
-            bgcolor="#F1F5F9", bordercolor="#E2E8F0", borderwidth=1,
-            font=dict(color="#173F7A", size=11), pad=dict(l=4, r=4, t=4, b=4),
-        )],
+        height=370,
+        autosize=True,
+        showlegend=False,
+
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+
+        font=dict(
+            family="Inter, Segoe UI, Arial, sans-serif",
+            color=preto,
+            size=12,
+        ),
+
+        margin=dict(
+            l=55,
+            r=25,
+            t=70,
+            b=45,
+        ),
+
+        xaxis=dict(
+            title=dict(
+                text="Anos",
+                font=dict(
+                    color=preto,
+                    size=12,
+                ),
+            ),
+            showgrid=False,
+            showline=True,
+            linecolor="#d1d5db",
+            linewidth=1,
+            zeroline=False,
+            tickfont=dict(
+                color=preto,
+                size=11,
+            ),
+        ),
+
+        yaxis=dict(
+            title=dict(
+                text="R$ milhões",
+                font=dict(
+                    color=preto,
+                    size=12,
+                ),
+            ),
+            rangemode="tozero",
+            showgrid=True,
+            gridcolor=cinza_grid,
+            gridwidth=1,
+            showline=False,
+            zeroline=False,
+            tickfont=dict(
+                color=preto,
+                size=11,
+            ),
+        ),
+
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="right",
+                buttons=botoes,
+                active=0,
+
+                x=1,
+                y=1.20,
+                xanchor="right",
+                yanchor="top",
+
+                bgcolor=azul_muito_claro,
+                bordercolor=azul_principal,
+                borderwidth=1,
+
+                font=dict(
+                    family="Inter, Segoe UI, Arial, sans-serif",
+                    color=azul_escuro,
+                    size=11,
+                ),
+
+                pad=dict(
+                    l=8,
+                    r=8,
+                    t=6,
+                    b=6,
+                ),
+
+                showactive=True,
+            )
+        ],
+
         hovermode="x unified",
+
+        hoverlabel=dict(
+            bgcolor="#ffffff",
+            bordercolor=azul_claro,
+            font=dict(
+                color=preto,
+                size=12,
+            ),
+        ),
     )
 
     return html.Div(
@@ -378,26 +678,36 @@ def _evolution_result_panel(data):
                 [
                     html.Div(
                         [
-                          html.Span(
+                            html.Span(
                                 DashIconify(
                                     icon="uis:graph-bar",
-                                    width=24, 
-                                    color="#0284c7"
-                                ), 
-                                className="panel-header-icon"
+                                    width=24,
+                                    color=azul_principal,
+                                ),
+                                className="panel-header-icon",
                             ),
-                            html.H3("Evolução do Resultado", className="panel-header-title"),
+                            html.H3(
+                                "Evolução do Resultado",
+                                className="panel-header-title",
+                            ),
                         ],
                         className="panel-header",
                     ),
-                    html.Span("⛶", title="Expandir gráfico", className="panel-expand-icon"),
                 ],
                 className="panel-header-wrapper",
             ),
+
             dcc.Graph(
-                id="investor-evolution-chart", figure=fig,
-                config={"displayModeBar": False, "responsive": True},
-                style={"width": "100%", "height": "390px"},
+                id="investor-evolution-chart",
+                figure=fig,
+                config={
+                    "displayModeBar": False,
+                    "responsive": True,
+                },
+                style={
+                    "width": "100%",
+                    "height": "390px",
+                },
             ),
         ],
         className="investor-panel",
@@ -438,7 +748,7 @@ def _cash_flow_panel(data):
     anos = [f"Ano {int(ano)}" for ano in yearly.index]
 
     fig = go.Figure()
-    series = [("Operacional", "#173F7A"), ("Investimento", "#2563A6"), ("Financiamento", "#60A5FA")]
+    series = [("Operacional", "#501839"), ("Investimento", "#f1d6e6"), ("Financiamento", "#a57592")]
 
     for nome, cor in series:
         fig.add_trace(go.Bar(
@@ -480,10 +790,10 @@ def _cash_flow_panel(data):
                     html.Div(
                         [
                             html.Span(
-                        DashIconify(
-                            icon="streamline:graph-arrow-increase",
-                            width=24, 
-                            color="#0284c7"
+                                DashIconify(
+                                    icon="streamline:graph-arrow-increase",
+                                    width=24, 
+                                    color="#a57592"
                         ), 
                         className="panel-header-icon"
                     ),
@@ -512,9 +822,9 @@ def _investor_card_custom(title, value, variation_text, variation_status, theme,
         var_color = "#16A34A"      
         arrow = "↑"
     else:
-        bg_color = "#FFF9F5"       
-        icon_bg = "#FFEDD5"        
-        icon_color = "#EA580C"     
+        bg_color = "#f1d6e6"       
+        icon_bg = "#a57592"        
+        icon_color = "#501839"     
         var_color = "#DC2626"      
         arrow = "↓"
 
@@ -572,56 +882,111 @@ def render_investor_view(
     historical_data=None,
 ):
     metric_labels = metric_labels or {}
+    desc_trend = get_trend_description(
+    latest,
+    prev,
+    latest_year,
+    )
+
+    desc_value = get_value_cash_description(
+        latest,
+        prev,
+        latest_year,
+    )
+
+    desc_risk = get_risk_description(
+        latest,
+        risk,
+        latest_year,
+        perspective="investidores",
+    )
+
+    desc_dist = get_distribution_description(
+        latest,
+        selected_metric,
+        metric_labels,
+        latest_year,
+        perspective="investidores",
+    )
+    
     if historical_data is None:
         historical_data = latest
     if metrics is None:
         metrics = _investor_metrics(latest) or {}
 
-    # --- CRIAÇÃO DOS 4 CARDS ---
-    lucro = money(metrics.get("lucro_liquido", 0))
-    receita = money(metrics.get("receita_liquida", 0))
-    margem = f"{metrics.get('margem_liquida', 0):.1f}%".replace(".", ",")
-    divida = f"{metrics.get('divida_ebitda', 0):.1f}x".replace(".", ",")
+    def calculate_delta(current_value, previous_value):
+        if (
+            current_value is None
+            or previous_value is None
+            or pd.isna(current_value)
+            or pd.isna(previous_value)
+        ):
+            return None
 
+        return current_value - previous_value
+    
+    # --- MÉTRICAS DO PERÍODO ANTERIOR ---
+    if prev is not None and not prev.empty:
+        previous_metrics = _investor_metrics(prev) or {}
+    else:
+        previous_metrics = {}
+    
+    # --- VALORES ATUAIS ---
+    lucro_atual = metrics.get("lucro_liquido", 0)
+    receita_atual = metrics.get("receita_liquida", 0)
+    margem_atual = metrics.get("margem_liquida", 0)
+    divida_atual = metrics.get("divida_ebitda", 0)
+
+    # --- VALORES DO PERÍODO ANTERIOR ---
+    lucro_anterior = previous_metrics.get("lucro_liquido")
+    receita_anterior = previous_metrics.get("receita_liquida")
+    margem_anterior = previous_metrics.get("margem_liquida")
+    divida_anterior = previous_metrics.get("divida_ebitda")
+
+    # --- VARIAÇÕES ---
+    delta_lucro = calculate_delta(lucro_atual, lucro_anterior)
+    delta_receita = calculate_delta(receita_atual, receita_anterior)
+    delta_margem = calculate_delta(margem_atual, margem_anterior)
+    delta_divida = calculate_delta(divida_atual, divida_anterior)
+
+    # --- VALORES FORMATADOS ---
+    lucro = money(lucro_atual)
+    receita = money(receita_atual)
+    margem = f"{margem_atual:.1f}%".replace(".", ",")
+    divida = f"{divida_atual:.1f}x".replace(".", ",")
+
+    # --- CARDS COM O DESIGN PADRÃO ---
     investor_tiles = [
-         _investor_card_custom(
-            title="Lucro Líquido", 
-            value=lucro, 
-            variation_text="+18,5%", 
-            variation_status="positive", 
-            theme="blue", 
-            sparkline_points="M0,18 L15,12 L25,15 L40,5 L55,8 L70,0",
-            icon_name="ph:trend-up"  # <--- Ícone de linha subindo
+        card(
+            "Lucro Líquido",
+            lucro,
+            delta_lucro,
+            subtitle="Resultado após despesas e impostos",
+            icon="andrsrxn:wallet",
         ),
-        _investor_card_custom(
-            title="Receita Líquida", 
-            value=receita, 
-            variation_text="+12,3%", 
-            variation_status="positive", 
-            theme="blue", 
-            sparkline_points="M0,20 L10,15 L20,18 L35,10 L50,12 L65,8 L70,8",
-            icon_name="ph:currency-circle-dollar"  # <--- Ícone de moeda
+        card(
+            "Receita Líquida",
+            receita,
+            delta_receita,
+            subtitle="Receita após deduções e impostos",
+            icon="cuida:sort-ascending-duotone",
         ),
-        _investor_card_custom(
-            title="Margem Líquida", 
-            value=margem, 
-            variation_text="+1,2 p.p.", 
-            variation_status="positive", 
-            theme="blue", 
-            sparkline_points="M0,15 L15,15 L25,10 L40,18 L55,12 L70,5",
-            icon_name="ph:percent"  # <--- Ícone de porcentagem
+        card(
+            "Margem Líquida",
+            margem,
+            delta_margem,
+            subtitle="Rentabilidade líquida sobre a receita",
+            icon="codicon:graph",
         ),
-        _investor_card_custom(
-            title="Dívida Líquida / EBITDA", 
-            value=divida, 
-            variation_text="-0,1x", 
-            variation_status="negative", 
-            theme="orange", 
-            sparkline_points="M0,10 L15,15 L30,8 L45,18 L60,15 L70,18",
-            icon_name="ph:scales"  # <--- Ícone de balança (endividamento)
-        )
+        card(
+            "Dívida Líquida / EBITDA",
+            divida,
+            delta_divida,
+            subtitle="Alavancagem financeira da operação",
+            icon="codex:money",
+        ),
     ]
-
+    
     side_indicators = []
     for key, label, formatter, show_variation in (
         ("margem_ebitda", "Margem EBITDA", percent, True),
@@ -654,38 +1019,75 @@ def render_investor_view(
 
     return html.Div(
         [
-            # 1. CABEÇALHO EM CARD (Estilo Demonstrativo)
+            # CABEÇALHO
             html.Div(
                 className="statement-header-card",
                 children=[
                     html.H1(
-                        "Visão do Investidor", 
-                        className="statement-title" # Usa a classe do CSS
+                        "Visão do Investidor",
+                        className="statement-title",
                     ),
                     html.P(
-                        "Rentabilidade, geração de caixa e criação de valor para o capital investido.",
-                        className="statement-subtitle" # Usa a classe do CSS
+                        "Rentabilidade, geração de caixa e criação de valor "
+                        "para o capital investido.",
+                        className="statement-subtitle",
                     ),
                 ],
-                style={"marginBottom": "24px"} # Dá um espaço entre o card do título e os gráficos abaixo
+                style={"marginBottom": "16px"},
             ),
-            
-            # 2. CARDS KPI (Lado a lado)
-            html.Div(
-                investor_tiles, 
-                className="metrics-grid investor-kpi-grid",
-                style={
-                    "display": "grid", 
-                    "gridTemplateColumns": "repeat(4, 1fr)", 
-                    "gap": "20px", 
-                    "marginBottom": "30px",
-                    "width": "100%"
-                }
+
+            # RESUMO PARA O INVESTIDOR
+            html.Section(
+                [
+                    html.H2("Resumo para o investidor"),
+
+                    html.P(
+                        "Visão consolidada dos principais indicadores de "
+                        "rentabilidade, resultado, margem e alavancagem "
+                        "financeira no período selecionado.",
+                        className="section-subtitle",
+                    ),
+
+                    html.Div(
+                        investor_tiles,
+                        className="metrics-grid",
+                    ),
+                ],
+                className="section-investor",
             ),
-            
-            # 3. CONTEÚDO DOS GRÁFICOS
-            main_row
+
+            # VISÃO DETALHADA
+            html.Section(
+                [
+                    html.H2("Visão detalhada"),
+
+                    html.P(
+                        "Acompanhamento da rentabilidade, evolução dos "
+                        "resultados, geração de caixa e composição patrimonial.",
+                        className="section-subtitle",
+                    ),
+
+                    # Mantém somente os gráficos que já existem
+                    main_row,
+
+                    # Texto próprio da visão do investidor
+                    html.P(
+                        [
+                            html.Strong("Análise para o investidor: "),
+                            (
+                                "Os indicadores detalhados permitem avaliar "
+                                "a capacidade de geração de resultado, o retorno "
+                                "sobre o capital investido, a evolução da receita "
+                                "e a sustentabilidade do fluxo de caixa ao longo "
+                                "dos períodos analisados."
+                            ),
+                        ],
+                        className="chart-description",
+                    ),
+                ],
+                className="section",
+            ),
         ],
-        className="statement-container", # Aplica o fundo cinza #f8fafc e o padding geral
-        style={"paddingBottom": "40px"} # Um respiro extra no final da página
+        className="statement-container",
+        style={"paddingBottom": "40px"},
     )
