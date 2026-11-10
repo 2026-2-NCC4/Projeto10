@@ -129,6 +129,8 @@ from metrics_kpi.charts import (
     create_investor_scatter_chart,
     create_value_cash_chart,
     create_balance_chart,
+    create_eva_figure,          
+    create_cenarios_figure,
 )
 from metrics_kpi.radar_normalization import compute_radar_scores
 from metrics_kpi.hero_radial import radial_figure
@@ -448,6 +450,7 @@ def render_content(
             prev=prev,
             latest_year=latest_year,
         )
+
 
     # Default: Management / Executive
     eva_fig = create_eva_figure(operating)
