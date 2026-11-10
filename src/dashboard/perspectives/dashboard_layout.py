@@ -883,7 +883,7 @@ def create_main_layout(
             ),
             # Painel 3: Seletor de indicador para distribuição (exibido apenas no Dashboard)
             panel(
-                "Indicador",
+                "Indicadores",
                 [
                     row(
                         "Distribuição",

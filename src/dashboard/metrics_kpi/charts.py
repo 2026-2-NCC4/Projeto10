@@ -2,7 +2,95 @@ import re
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import pandas as pd
 
+def create_eva_figure(w):
+    """Gera o gráfico de EVA médio por ano exibindo explicitamente os anos no eixo X."""
+    if w is None or w.empty or 'eva' not in w.columns:
+        fig = go.Figure()
+        fig.update_layout(
+            title="EVA Médio por Ano (Aguardando base de dados)",
+            height=320,
+            plot_bgcolor="white",
+            paper_bgcolor="white"
+        )
+        return fig
+    
+    # Agrupa por ano_num e calcula a média do EVA em milhões
+    eva_medio = w.groupby('ano_num')['eva'].mean() / 1_000_000
+    
+    # Garante que os rótulos do eixo X fiquem claros (ex: "Ano 1", "Ano 2" ou apenas o número do ano)
+    anos = [int(a) for a in eva_medio.index]
+    
+    fig = go.Figure(data=[
+        go.Bar(
+            x=anos,
+            y=eva_medio.values,
+            marker_color="#501839",
+            hovertemplate="<b>Ano %{x}</b><br>EVA Médio: R$ %{y:,.2f} mi<extra></extra>"
+        )
+    ])
+    fig.update_layout(
+        title="EVA Médio por Ano (Criação de Valor)",
+        xaxis_title="Ano da Concessão",
+        yaxis_title="R$ milhões",
+        height=320,
+        margin=dict(l=40, r=20, t=40, b=30),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        xaxis=dict(
+            type="category", # Força o eixo X a tratar cada ano como uma categoria distinta para exibir todos os rótulos
+            tickmode="linear"
+        )
+    )
+    return fig
+
+
+def create_cenarios_figure(w, ano_selecionado=1):
+    """Gera o gráfico de barras com a contagem das categorias de cenários com proteção contra None."""
+    if w is None or w.empty or 'categoria_cenario' not in w.columns:
+        fig = go.Figure()
+        fig.update_layout(
+            title=f"Classificação dos Cenários (Ano {ano_selecionado}) - Aguardando base",
+            height=320,
+            plot_bgcolor="white",
+            paper_bgcolor="white"
+        )
+        return fig
+
+    df_ano = w[w['ano_num'] == ano_selecionado]
+    
+    if df_ano.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            title=f"Classificação dos Cenários (Ano {ano_selecionado}) - Sem dados",
+            height=320,
+            plot_bgcolor="white",
+            paper_bgcolor="white"
+        )
+        return fig
+
+    contagem = df_ano['categoria_cenario'].value_counts()
+    
+    fig = go.Figure(data=[
+        go.Bar(
+            x=contagem.index,
+            y=contagem.values,
+            marker_color="#a57592",
+            hovertemplate="<b>%{x}</b><br>Qtd. Cenários: %{y}<extra></extra>"
+        )
+    ])
+    fig.update_layout(
+        title=f"Classificação dos 1.200 Cenários (Ano {ano_selecionado})",
+        xaxis_title="Categoria",
+        yaxis_title="Nº de Cenários",
+        height=320,
+        margin=dict(l=40, r=20, t=40, b=80),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        xaxis=dict(tickangle=-20)
+    )
+    return fig
 
 def pretty_label(col_name: str) -> str:
     """Convert snake_case column names to Title Case with spaces.

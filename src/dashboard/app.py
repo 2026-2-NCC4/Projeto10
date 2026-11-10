@@ -449,17 +449,25 @@ def render_content(
             latest_year=latest_year,
         )
 
+    # Default: Management / Executive
+    eva_fig = create_eva_figure(operating)
+    cenarios_fig = create_cenarios_figure(operating, latest_year)
     return render_management_view(
-        index_fig,
-        subtitle,
-        latest,
-        tiles1,
-        management_insights,
-        trend,
-        value_fig,
-        risk_fig,
-        terminal_children,
-        distribution,
+        subtitle=subtitle,
+        latest=latest,
+        tiles1=tiles1,
+        management_insights=management_insights,
+        trend=trend,
+        value_fig=value_fig,
+        risk_fig=risk_fig,
+        terminal_children=terminal_children,
+        distribution=distribution,
+        eva_fig=eva_fig,          
+        latest_year=latest_year,
+        prev=prev,
+        risk=risk,
+        selected_metric=selected_metric,
+        metric_labels=METRIC_LABELS,
     )
 # ==============================================================================
 # REACTIVE CALLBACKS (INTERACTIVITY)
